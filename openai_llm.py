@@ -1,4 +1,5 @@
 import json
+from constants import SheetColumns
 import openai
 from config import Config
 from utils.scraper import get_company_description
@@ -22,30 +23,32 @@ def make_completion_request(messages: list[dict], model: str="gpt-3.5-turbo", te
 
 
 def generate_1st_cold_email_content(lead: dict, agency_info: dict, company_description: str) -> str:
-    lead_info = {
-        "name": lead.get("name", ""),
-        "role": lead.get("role", ""),
-        "company": lead.get("company", ""),
-        "title": lead.get("title", ""),
-        "email": lead.get("email", ""),
-    }
+    recipient_name = lead.get(SheetColumns.NAME.value, "").split(" ")[0]
+    company = lead.get(SheetColumns.COMPANY_NAME.value, "")
+    prompt = """You are an expert in writing friendly, casual, and to-the-point cold emails. Your task is to generate a short, casual, personalized cold email using ONLY the following variables - DO NOT CREATE OR INSERT ANY OTHER VARIABLES OR PLACEHOLDERS:
 
-    recipient_name = lead_info["name"].split(" ")[0]
-    prompt = """You are an expert in writing friendly, casual, and to-the-point cold emails. Your task is to generate a short, casual, personalized cold email based on the following information:
+Available Variables (use exactly as shown):
+{recipient_name}
+{role}
+{company}
+{agency_name}
+{agency_info}
+{sender_name}
+{sender_position}
+{agency_website}
 
-Recipient Information:
-- Name: {recipient_name}
-- Role: {lead_info['role']} 
-- Company: {lead_info['company']}
-- Title: {lead_info['title']}
+Requirements:
+1. Subject line must contain {company} and {role}
+2. Email signature must include:
+   - {sender_name}
+   - {sender_position}
+   - {agency_name}
+   - {agency_website}
 
-Agency Information:
-- Company Name: {agency_info[0]['company_name']}
-- Company Description: {company_description}
-- Founder Name: {agency_info[0]['founder_name']}
-- Founder Title: {agency_info[0]['founder_title']} 
-- Founder About: {agency_info[0]['founder_about']}
-- Calendar Link: {agency_info[0]['calendar_link']}
+IMPORTANT: 
+- Do NOT invent, create, or use any placeholders not listed above
+- Use variables exactly as shown - do NOT modify their format
+- Do NOT add dynamic content like dates, times, or custom fields
 
 Writing style: conversational, casual, engaging, simple to read, simple linear active voice sentences, informational and insightful.
 
@@ -73,7 +76,7 @@ Respond with JSON containing subject and email content only:
         },
         {
             "role": "user", 
-            "content": f"Generate a cold email for {recipient_name} at {lead_info['company']}"
+            "content": f"Generate a cold email for {recipient_name} at {company}"
         }
     ]
     

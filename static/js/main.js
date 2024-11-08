@@ -5,19 +5,23 @@ function getStatusChip(status) {
     return `<span class="status-chip status-${status.toLowerCase()}">${status}</span>`;
 }
 
-function createEmailEditor(leadEmail) {
+function createEmailEditor(email) {
     return `
-        <div class="email-editor">
-            <textarea id="email-content" placeholder="Email content..."></textarea>
-            <div class="button-group">
-                <button class="button button-secondary" onclick="previewEmail()">Preview</button>
-                <button class="button button-primary" onclick="sendEmail('${leadEmail}')">Send Email</button>
+        <div class="email-editor" style="display: none;">
+            <input type="text" id="email-subject" class="email-subject" placeholder="Email subject..." />
+            <textarea id="email-content" rows="10" placeholder="Email content will appear here..."></textarea>
+            <div class="editor-actions">
+                <button class="button button-primary" id="send-email-btn" onclick="sendEmail('${email}')">Send Email</button>
             </div>
         </div>
     `;
 }
 
 async function generateEmail(leadEmail) {
+    const generateBtn = document.getElementById('generate-email-btn');
+    generateBtn.disabled = true;
+    generateBtn.textContent = 'Generating...';
+
     try {
         const response = await fetch(`/api/lead/${leadEmail}/generate-email`, {
             method: 'POST'
@@ -26,15 +30,27 @@ async function generateEmail(leadEmail) {
         
         const emailEditor = document.querySelector('.email-editor');
         if (emailEditor) {
+            emailEditor.style.display = 'block';
+            emailEditor.querySelector('#email-subject').value = data.subject;
             emailEditor.querySelector('#email-content').value = data.email;
+            generateBtn.textContent = 'Regenerate Email';
         }
     } catch (error) {
         console.error('Error generating email:', error);
+    } finally {
+        generateBtn.disabled = false;
     }
 }
 
 async function sendEmail(leadEmail) {
+    const sendButton = document.querySelector('#send-email-btn');
+    const originalText = sendButton.textContent;
+    sendButton.textContent = 'Sending...';
+    sendButton.disabled = true;
+
+    const subject = document.querySelector('#email-subject').value;
     const content = document.querySelector('#email-content').value;
+    
     try {
         const response = await fetch(`/api/lead/${leadEmail}/send-email`, {
             method: 'POST',
@@ -42,23 +58,18 @@ async function sendEmail(leadEmail) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
+                email_subject: subject,
                 email_content: content
             })
         });
         
         if (response.ok) {
-            // Refresh lead details to show updated status
             loadLeadDetails(leadEmail);
         }
-    } catch (error) {
-        console.error('Error sending email:', error);
+    } finally {
+        sendButton.disabled = false;
+        sendButton.textContent = originalText;
     }
-}
-
-function previewEmail() {
-    const content = document.querySelector('#email-content').value;
-    // Add your preview logic here
-    alert('Preview: ' + content);
 }
 
 async function loadLeadDetails(leadEmail) {
@@ -71,14 +82,14 @@ async function loadLeadDetails(leadEmail) {
                 <h2>${data.company_name}</h2>
                 ${getStatusChip(data.status_info.status)}
             </div>
-            <div class="lead-info">
-                <p><strong>Contact:</strong> ${data.name}</p>
+            <div class="lead-info" data-lead-email="${data.email}">
+                <p><strong>Name:</strong> ${data.name}</p>
                 <p><strong>Email:</strong> ${data.email}</p>
                 <p><strong>Domain:</strong> ${data.company_domain}</p>
             </div>
-            ${data.status_info.is_new ? `
+            ${data.status_info.status ? `
                 <div class="email-generator">
-                    <button class="button button-primary" onclick="generateEmail('${data.email}')">
+                    <button class="button button-primary" id="generate-email-btn" onclick="generateEmail('${data.email}')">
                         Generate Cold Email
                     </button>
                     ${createEmailEditor(data.email)}
