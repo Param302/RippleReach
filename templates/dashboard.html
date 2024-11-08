@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard">
+    <nav class="sidebar">
+        <h1>Leads</h1>
+        {% for lead in leads %}
+            <div class="nav-item" data-lead-email="{{ lead.email }}">
+                <span class="name">{{ lead.name }}</span>
+                <span class="company_email">{{ lead.email }}</span>
+                <span class="company_name">{{ lead.company_name }}</span>
+                <span class="company_domain">{{ lead.company_domain }}</span>
+            </div>
+        {% endfor %}
+    </nav>
+    
+    <main class="content">
+        <div id="lead-details" class="lead-details">
+            <div class="placeholder">Select a lead to view details</div>
+        </div>
+    </main>
+</div>
+{% endblock %}

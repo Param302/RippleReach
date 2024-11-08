@@ -1,0 +1,146 @@
+:root {
+    --sidebar-width: 250px;
+    --primary-color: #2563eb;
+    --bg-color: #f3f4f6;
+    --text-color: #1f2937;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg-color);
+    color: var(--text-color);
+}
+
+.dashboard {
+    display: flex;
+    height: 100vh;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    background: white;
+    border-right: 1px solid #e5e7eb;
+    overflow-y: auto;
+}
+
+.nav-item {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.nav-item:hover {
+    background-color: #f8fafc;
+}
+
+.nav-item.active {
+    background-color: #eff6ff;
+    border-left: 3px solid var(--primary-color);
+}
+
+.company-name {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.contact-name {
+    display: block;
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.content {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.lead-details {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.placeholder {
+    text-align: center;
+    color: #6b7280;
+    padding: 2rem;
+}
+
+.lead-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.status-chip {
+    padding: 0.5rem 1rem;
+    border-radius: 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.status-new {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.status-active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-failed {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.email-generator {
+    margin-top: 1.5rem;
+}
+
+.email-editor {
+    margin-top: 1rem;
+}
+
+.email-editor textarea {
+    width: 100%;
+    min-height: 200px;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.button {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s;
+}
+
+.button-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.button-primary:hover {
+    background: #1d4ed8;
+}
+
+.button-secondary {
+    background: #e5e7eb;
+    color: #374151;
+    margin-right: 0.5rem;
+}
+
+.button-secondary:hover {
+    background: #d1d5db;
+} 
