@@ -5,9 +5,17 @@ function getStatusChip(status) {
     return `<span class="status-chip status-${status.toLowerCase()}">${status}</span>`;
 }
 
-function createEmailEditor(email) {
+function createEmailEditor(email, senderConfigs) {
     return `
         <div class="email-editor" style="display: none;">
+            <div class="sender-selection">
+                <label for="sender-email">Send from:</label>
+                <select id="sender-email" class="sender-email-select">
+                    ${senderConfigs.map(sender => `
+                        <option value="${sender.email}">${sender.email} (${sender.display_name})</option>
+                    `).join('')}
+                </select>
+            </div>
             <input type="text" id="email-subject" class="email-subject" placeholder="Email subject..." />
             <textarea id="email-content" rows="10" placeholder="Email content will appear here..."></textarea>
             <div class="editor-actions">
@@ -50,6 +58,7 @@ async function sendEmail(leadEmail) {
 
     const subject = document.querySelector('#email-subject').value;
     const content = document.querySelector('#email-content').value;
+    const senderEmail = document.querySelector('#sender-email').value;
     
     try {
         const response = await fetch(`/api/lead/${leadEmail}/send-email`, {
@@ -59,7 +68,8 @@ async function sendEmail(leadEmail) {
             },
             body: JSON.stringify({
                 email_subject: subject,
-                email_content: content
+                email_content: content,
+                sender_email: senderEmail
             })
         });
         
@@ -72,10 +82,18 @@ async function sendEmail(leadEmail) {
     }
 }
 
+
 async function loadLeadDetails(leadEmail) {
     try {
-        const response = await fetch(`/api/lead/${leadEmail}`);
-        const data = await response.json();
+        const [leadResponse, configResponse] = await Promise.all([
+            fetch(`/api/lead/${leadEmail}`),
+            fetch('/api/sender-configs')
+        ]);
+        
+        const [data, senderConfigs] = await Promise.all([
+            leadResponse.json(),
+            configResponse.json()
+        ]);
         
         leadDetails.innerHTML = `
             <div class="lead-header">
@@ -92,7 +110,7 @@ async function loadLeadDetails(leadEmail) {
                     <button class="button button-primary" id="generate-email-btn" onclick="generateEmail('${data.email}')">
                         Generate Cold Email
                     </button>
-                    ${createEmailEditor(data.email)}
+                    ${createEmailEditor(data.email, senderConfigs)}
                 </div>
             ` : ''}
         `;

@@ -2,6 +2,7 @@ from config import Config
 from connectors.gsheet import get_leads_data, get_agency_data, update_sheet_row, get_lead_by_email
 from flask import Flask, render_template, jsonify, request
 from openai_llm import generate_1st_cold_email_content, generate_company_description, generate_standard_response
+from utils.email_integration import send_round_robin_email
 from utils.formatter import format_email_content, format_keys
 from constants import EmailStatus, SheetColumns
 
@@ -60,26 +61,50 @@ def generate_cold_email(lead_email):
 
 @app.route("/api/lead/<lead_email>/send-email", methods=['POST'])
 def send_cold_email(lead_email):
-    lead = get_lead_by_email(lead_email)
     data = request.json
-    email_content = data.get('email_content')
-    subject = data.get('email_subject')
-
-    lead[SheetColumns.COLD_EMAIL_SUBJECT.value] = subject
-    lead[SheetColumns.EMAIL_CONTENT.value] = email_content
-    # update the sheet for Cold Email Subject and Email Content
-    update_sheet_row(
-        lead[SheetColumns.EMAIL.value],
-        {SheetColumns.COLD_EMAIL_SUBJECT.value: subject}
-    )
-    update_sheet_row(
-        lead[SheetColumns.EMAIL.value],
-        {SheetColumns.EMAIL_CONTENT.value: email_content}
-    )
+    sender_email = data.get('sender_email')
+    
+    # Validate sender email
+    sender_config = next((config for config in Config.SENDER_CONFIGS 
+                         if config['email'] == sender_email), None)
+    if not sender_config:
+        return jsonify({'error': 'Invalid sender email'}), 400
+    
+    lead = get_lead_by_email(lead_email)
+    
+    # Update sheet with email content and subject
+    lead[SheetColumns.COLD_EMAIL_SUBJECT.value] = data['email_subject']
+    lead[SheetColumns.EMAIL_CONTENT.value] = data['email_content']
+    lead[SheetColumns.SENDER_EMAIL.value] = sender_email
+    
+    
+    # Render email template
+    context = {
+        'paragraphs': data['email_content'].split('\n\n'),
+        'calendar_link': Config.CALENDAR_LINK,
+        'sender_name': sender_config['display_name'],
+        'sender_position': Config.AGENCY_INFO['sender']['position'],
+        'agency_name': Config.AGENCY_INFO['name'],
+        'agency_website': Config.AGENCY_INFO['website'],
+        # 'portfolio': get_portfolio_data()
+    }
+    
+    html_content = render_template('emails/email_template.html', **context)
     
     # Implement your email sending logic here
     # Update lead status to SENT after successful sending
     
+    update_sheet_row(
+        lead[SheetColumns.EMAIL.value],
+        {
+            SheetColumns.COLD_EMAIL_SUBJECT.value: data['email_subject'],
+            SheetColumns.EMAIL_CONTENT.value: data['email_content'],
+            SheetColumns.SENDER_EMAIL.value: sender_email
+        }
+    )
+
+    send_round_robin_email(sender_email,lead[SheetColumns.EMAIL.value], data['email_subject'], html_content)
+
     return jsonify({'success': True, 'message': 'Email sent successfully'})
 
 @app.route("/send_emails", methods=["POST"])
@@ -94,6 +119,9 @@ def send_email():
     """Send an email to a single recipient"""
     ...
 
+@app.route("/api/sender-configs")
+def get_sender_configs():
+    return jsonify(Config.SENDER_CONFIGS)
 
 if __name__ == '__main__':
     app.run(debug=True)

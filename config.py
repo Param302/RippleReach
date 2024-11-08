@@ -28,12 +28,13 @@ class Config:
             "api_key": RESEND_API_KEYS[0],
             "password": os.getenv("EMAIL_PASSWORD_1")
         },
-        {
-            "email": "krishna@kuberanix.online",  # Domain 2
-            "display_name": "Krishna",
-            "api_key": RESEND_API_KEYS[1],
-            "password": os.getenv("EMAIL_PASSWORD_2")
-        },
+        # !ERROR for API KEY 2
+        # {
+        #     "email": "krishna@kuberanix.online",  # Domain 2
+        #     "display_name": "Krishna",
+        #     "api_key": RESEND_API_KEYS[1],
+        #     "password": os.getenv("EMAIL_PASSWORD_2")
+        # },
         {
             "email": "krishna@kuberanix.site",    # Domain 3
             "display_name": "Krishna",
