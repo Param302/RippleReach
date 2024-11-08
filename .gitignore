@@ -1,2 +1,6 @@
 env/
 .env
+__pycache__/
+
+# Credentials and secrets
+*.json
