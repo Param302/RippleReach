@@ -6,10 +6,8 @@
         <h1>Leads</h1>
         {% for lead in leads %}
             <div class="nav-item" data-lead-email="{{ lead.email }}">
-                <span class="name">{{ lead.name }}</span>
-                <span class="company_email">{{ lead.email }}</span>
-                <span class="company_name">{{ lead.company_name }}</span>
-                <span class="company_domain">{{ lead.company_domain }}</span>
+                <div class="name"><strong>{{ lead.name }}</strong></div>
+                <div class="company_name">{{ lead.company_name | lower }}</div>
             </div>
         {% endfor %}
     </nav>
