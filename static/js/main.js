@@ -2,7 +2,8 @@ const navItems = document.querySelectorAll('.nav-item');
 const leadDetails = document.getElementById('lead-details');
 
 function getStatusChip(status) {
-    return `<span class="status-chip status-${status.toLowerCase()}">${status}</span>`;
+    const statusLower = status.toLowerCase();
+    return `<span class="status-chip status-${statusLower}">${status}</span>`;
 }
 
 function createEmailEditor(email, senderConfigs) {
@@ -82,6 +83,23 @@ async function sendEmail(leadEmail) {
     }
 }
 
+function showSuccessMessage() {
+    const successMessage = document.createElement('div');
+    successMessage.className = 'success-message';
+    successMessage.innerHTML = `
+        <svg class="success-icon" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        <span>Email sent successfully!</span>
+    `;
+    
+    document.querySelector('.email-generator').prepend(successMessage);
+    
+    setTimeout(() => {
+        successMessage.remove();
+        loadLeadDetails(currentLeadEmail); // Reload lead details after success message
+    }, 5000);
+}
 
 async function loadLeadDetails(leadEmail) {
     try {
@@ -95,6 +113,9 @@ async function loadLeadDetails(leadEmail) {
             configResponse.json()
         ]);
         
+        const emailHistory = data.email_history;
+        const showEmailGenerator = data.status_info.status === 'New';
+        
         leadDetails.innerHTML = `
             <div class="lead-header">
                 <h2>${data.company_name}</h2>
@@ -103,9 +124,24 @@ async function loadLeadDetails(leadEmail) {
             <div class="lead-info" data-lead-email="${data.email}">
                 <p><strong>Name:</strong> ${data.name}</p>
                 <p><strong>Email:</strong> ${data.email}</p>
+                <p><strong>Role:</strong> ${data.role || 'N/A'}</p>
                 <p><strong>Domain:</strong> ${data.company_domain}</p>
+                <p><strong>Company Size:</strong> ${data.company_size || 'N/A'}</p>
+                <p><strong>Industry:</strong> ${data.industry || 'N/A'}</p>
+                <p><strong>Headline:</strong> ${data.headline || 'N/A'}</p>
             </div>
-            ${data.status_info.status ? `
+            ${data.status_info.status === 'Sent' ? `
+                <details class="email-history">
+                    <summary>Starter Cold Email</summary>
+                    <div class="email-history-content">
+                        <p><strong>Subject:</strong> ${emailHistory.subject}</p>
+                        <p><strong>Sent By:</strong> ${emailHistory.sender}</p>
+                        <p><strong>Content:</strong></p>
+                        <pre>${emailHistory.content}</pre>
+                    </div>
+                </details>
+            ` : ''}
+            ${showEmailGenerator ? `
                 <div class="email-generator">
                     <button class="button button-primary" id="generate-email-btn" onclick="generateEmail('${data.email}')">
                         Generate Cold Email

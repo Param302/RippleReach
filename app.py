@@ -17,24 +17,38 @@ def dashboard():
 def get_lead(lead_email):
     lead = get_lead_by_email(lead_email)
     
-    email_status = lead.get(SheetColumns.EMAIL_STATUS.value) or EmailStatus.NEW.value
-
+    # Get current email status from sheet, default to NEW if not set
+    current_status = lead.get(SheetColumns.EMAIL_STATUS.value)
+    if not current_status:
+        current_status = EmailStatus.NEW.value
+        update_sheet_row(
+            lead[SheetColumns.EMAIL.value],
+            {SheetColumns.EMAIL_STATUS.value: EmailStatus.NEW.value}
+        )
+    
     status_info = {
-        'status': email_status,
-        'is_new': email_status == EmailStatus.NEW.value,
-        'is_active': email_status == EmailStatus.SENT.value,
-        'is_failed': email_status == EmailStatus.FAILED.value
+        'status': current_status,
     }
     
-    lead['status_info'] = status_info
-    
+    # Expanded lead details including email history
     lead_details = {
         'email': lead.get(SheetColumns.EMAIL.value, ''),
         'company_domain': lead.get(SheetColumns.COMPANY_DOMAIN.value, ''),
         'name': lead.get(SheetColumns.NAME.value, ''),
         'role': lead.get(SheetColumns.ROLE.value, ''),
-        'company_name': lead.get(SheetColumns.COMPANY_NAME.value, '')
+        'company_name': lead.get(SheetColumns.COMPANY_NAME.value, ''),
+        'company_size': lead.get(SheetColumns.COMPANY_SIZE.value, ''),
+        'headline': lead.get(SheetColumns.HEADLINE.value, ''),
+        'industry': lead.get(SheetColumns.INDUSTRY.value, ''),
+        'email_history': {
+            'subject': lead.get(SheetColumns.COLD_EMAIL_SUBJECT.value, ''),
+            'content': lead.get(SheetColumns.EMAIL_CONTENT.value, ''),
+            'sender': lead.get(SheetColumns.SENDER_EMAIL.value, ''),
+            'sent_at': lead.get(SheetColumns.LAST_MESSAGE.value, '')
+        }
     }
+    
+    lead['status_info'] = status_info
     lead.update(lead_details)
     return jsonify(lead)
 
@@ -72,13 +86,6 @@ def send_cold_email(lead_email):
     
     lead = get_lead_by_email(lead_email)
     
-    # Update sheet with email content and subject
-    lead[SheetColumns.COLD_EMAIL_SUBJECT.value] = data['email_subject']
-    lead[SheetColumns.EMAIL_CONTENT.value] = data['email_content']
-    lead[SheetColumns.SENDER_EMAIL.value] = sender_email
-    
-    
-    # Render email template
     context = {
         'paragraphs': data['email_content'].split('\n\n'),
         'calendar_link': Config.CALENDAR_LINK,
@@ -86,26 +93,24 @@ def send_cold_email(lead_email):
         'sender_position': Config.AGENCY_INFO['sender']['position'],
         'agency_name': Config.AGENCY_INFO['name'],
         'agency_website': Config.AGENCY_INFO['website'],
-        # 'portfolio': get_portfolio_data()
     }
-    
     html_content = render_template('emails/email_template.html', **context)
     
-    # Implement your email sending logic here
-    # Update lead status to SENT after successful sending
+    send_round_robin_email(sender_email, lead[SheetColumns.EMAIL.value], 
+                            data['email_subject'], html_content)
     
     update_sheet_row(
         lead[SheetColumns.EMAIL.value],
         {
+            SheetColumns.EMAIL_STATUS.value: EmailStatus.SENT.value,
             SheetColumns.COLD_EMAIL_SUBJECT.value: data['email_subject'],
             SheetColumns.EMAIL_CONTENT.value: data['email_content'],
             SheetColumns.SENDER_EMAIL.value: sender_email
         }
     )
-
-    send_round_robin_email(sender_email,lead[SheetColumns.EMAIL.value], data['email_subject'], html_content)
-
+        
     return jsonify({'success': True, 'message': 'Email sent successfully'})
+    
 
 @app.route("/send_emails", methods=["POST"])
 def send_emails():
