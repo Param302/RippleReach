@@ -98,25 +98,18 @@ def send_cold_email(lead_email):
     # !FIX: auto select sender email
     sender_email = data.get('sender_email')
     
-    # Validate sender email
-    sender_config = next((config for config in Config.SENDER_CONFIGS 
-                         if config['email'] == sender_email), None)
-    if not sender_config:
-        return jsonify({'error': 'Invalid sender email'}), 400
-    
     lead = get_lead_by_email(lead_email)
     
     context = {
         'paragraphs': data['email_content'].split('\n\n'),
         'calendar_link': Config.CALENDAR_LINK,
-        'sender_name': sender_config['display_name'],
         'sender_position': Config.AGENCY_INFO['sender']['position'],
         'agency_name': Config.AGENCY_INFO['name'],
         'agency_website': Config.AGENCY_INFO['website'],
     }
     html_content = render_template('emails/email_template.html', **context)
     
-    send_round_robin_email(sender_email, lead[SheetColumns.EMAIL.value], 
+    response = send_round_robin_email(lead[SheetColumns.EMAIL.value], 
                             data['email_subject'], html_content)
     
     update_sheet_row(
@@ -129,7 +122,7 @@ def send_cold_email(lead_email):
         }
     )
         
-    return jsonify({'success': True, 'message': 'Email sent successfully'})
+    return jsonify({'success': True, 'message': 'Email sent successfully', 'details': response })
 
 
 @app.route("/send_email", methods=["POST"])

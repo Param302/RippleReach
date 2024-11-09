@@ -16,12 +16,21 @@ class EmailSender:
         required_fields = ['email', 'api_key', 'display_name']
         return all(field in config and config[field] for field in required_fields)
 
-    def get_sender_config(email_id: str) -> dict:
-        """Returns the sender config for a given email ID"""
-        for config in Config.SENDER_CONFIGS:
-            if config['email'] == email_id:
-                return config
-        return None
+    @classmethod
+    def get_next_sender_config(cls) -> dict:
+        """Returns the next sender config in round-robin fashion with validation"""
+        if not Config.SENDER_CONFIGS:
+            raise ValueError("No sender configurations available")
+            
+        config = Config.SENDER_CONFIGS[cls._current_index]
+        
+        # Validate config
+        if not cls.validate_sender_config(config):
+            raise ValueError(f"Invalid sender configuration: {json.dumps(config, default=str)}")
+        
+        # Increment for next time
+        cls._current_index = (cls._current_index + 1) % len(Config.SENDER_CONFIGS)
+        return config
 
 
 def validate_email_content(to_email: str, subject: str, html_content: str) -> None:
@@ -35,13 +44,13 @@ def validate_email_content(to_email: str, subject: str, html_content: str) -> No
     if not html_content or len(html_content.strip()) < 10:
         raise ValueError(f"Invalid email content length: {len(html_content) if html_content else 0} chars")
 
-def send_round_robin_email(from_email: str, to_email: str, subject: str, html_content: str, attachments: list[dict] = None) -> dict:
+def send_round_robin_email(to_email: str, subject: str, html_content: str, attachments: list[dict] = None) -> dict:
     """Send email using round-robin sender configuration with enhanced validation"""
     start_time = datetime.now()
     request_id = f"email_{start_time.strftime('%Y%m%d_%H%M%S')}"
     
     validate_email_content(to_email, subject, html_content)
-    sender_config = EmailSender.get_sender_config(from_email)
+    sender_config = EmailSender.get_next_sender_config()
     
     clean_subject = subject.strip().strip('"\'').strip()
     from_email = f"{sender_config['display_name']} <{sender_config['email']}>"
