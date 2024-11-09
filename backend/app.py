@@ -9,7 +9,7 @@ from connectors.gsheet import get_leads_data, get_agency_data, update_sheet_row,
 from openai_llm import generate_1st_cold_email_content, generate_company_description, generate_standard_response
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
 
 
 @app.route("/")
@@ -26,13 +26,14 @@ def dashboard():
         if i[SheetColumns.EMAIL_STATUS.value] in (EmailStatus.REPLIED.value, EmailStatus.ACTIVE.value):
             conversations += 1
 
-    return render_template('dashboard.html', total_leads=total_leads, outeach=outeach, conversations=conversations)
+    # return render_template('dashboard.html', total_leads=total_leads, outeach=outeach, conversations=conversations)
+    return jsonify({'total_leads': total_leads, 'outreach': outeach, 'conversations': conversations})
 
-
-@app.route("/send_emails")
+@app.route("/api/send_emails")
 def send_emails():
     leads = format_keys(get_leads_data())
-    return render_template('send_emails.html', leads=leads)
+    # return render_template('send_emails.html', leads=leads)
+    return jsonify(leads)
 
 
 @app.route("/api/lead/<lead_email>/generate-email", methods=['POST'])

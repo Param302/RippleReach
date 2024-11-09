@@ -1,22 +1,9 @@
 import Link from 'next/link'
-import { API_URL, API_ENDPOINTS } from '@/config';
-
-interface DashboardProps {
-  totalLeads: number;
-  outreach: number;
-  conversations: number;
-}
 
 async function getDashboardData() {
-  const res = await fetch(`${API_URL}${API_ENDPOINTS.dashboard}`, {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    credentials: 'include',
-  });
-  
-  if (!res.ok) throw new Error('Failed to fetch dashboard data');
-  return res.json();
+  const res = await fetch('/api/dashboard')
+  if (!res.ok) throw new Error('Failed to fetch dashboard data')
+  return res.json()
 }
 
 export default async function Dashboard() {
@@ -35,7 +22,7 @@ export default async function Dashboard() {
       <h2 className="text-xl font-semibold mb-4">Actions</h2>
       <section className="flex gap-4">
         <Link 
-          href="/send_emails" 
+          href="/emails" 
           className="text-blue-600 hover:underline"
         >
           Send cold emails
@@ -55,4 +42,4 @@ export default async function Dashboard() {
       </section>
     </main>
   )
-}
+} 
