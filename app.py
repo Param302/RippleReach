@@ -1,10 +1,11 @@
 from config import Config
-from connectors.gsheet import get_leads_data, get_agency_data, update_sheet_row, get_lead_by_email
-from flask import Flask, render_template, jsonify, request
-from openai_llm import generate_1st_cold_email_content, generate_company_description, generate_standard_response
-from utils.email_integration import send_round_robin_email
-from utils.formatter import format_email_content, format_keys
+from utils.helper import get_description
 from constants import EmailStatus, SheetColumns
+from utils.email_integration import send_round_robin_email
+from flask import Flask, render_template, jsonify, request
+from utils.formatter import format_email_content, format_keys
+from connectors.gsheet import get_leads_data, get_agency_data, update_sheet_row, get_lead_by_email
+from openai_llm import generate_1st_cold_email_content, generate_company_description, generate_standard_response
 
 app = Flask(__name__)
 
@@ -27,49 +28,9 @@ def dashboard():
 
 @app.route("/send_emails")
 def send_emails():
-    leads = get_leads_data()
-    required_leads = format_keys([i for i in leads if not i.get(SheetColumns.EMAIL_STATUS.value) or i.get(SheetColumns.EMAIL_STATUS.value) == EmailStatus.NEW.value])
-    
-    return render_template('send_emails.html', leads=required_leads)
+    leads = format_keys(get_leads_data())
+    return render_template('send_emails.html', leads=leads)
 
-@app.route("/api/lead/<lead_email>")
-def get_lead(lead_email):
-    lead = get_lead_by_email(lead_email)
-    
-    # Get current email status from sheet, default to NEW if not set
-    current_status = lead.get(SheetColumns.EMAIL_STATUS.value)
-    if not current_status:
-        current_status = EmailStatus.NEW.value
-        update_sheet_row(
-            lead[SheetColumns.EMAIL.value],
-            {SheetColumns.EMAIL_STATUS.value: EmailStatus.NEW.value}
-        )
-    
-    status_info = {
-        'status': current_status,
-    }
-    
-    # Expanded lead details including email history
-    lead_details = {
-        'email': lead.get(SheetColumns.EMAIL.value, ''),
-        'company_domain': lead.get(SheetColumns.COMPANY_DOMAIN.value, ''),
-        'name': lead.get(SheetColumns.NAME.value, ''),
-        'role': lead.get(SheetColumns.ROLE.value, ''),
-        'company_name': lead.get(SheetColumns.COMPANY_NAME.value, ''),
-        'company_size': lead.get(SheetColumns.COMPANY_SIZE.value, ''),
-        'headline': lead.get(SheetColumns.HEADLINE.value, ''),
-        'industry': lead.get(SheetColumns.INDUSTRY.value, ''),
-        'email_history': {
-            'subject': lead.get(SheetColumns.COLD_EMAIL_SUBJECT.value, ''),
-            'content': lead.get(SheetColumns.EMAIL_CONTENT.value, ''),
-            'sender': lead.get(SheetColumns.SENDER_EMAIL.value, ''),
-            'sent_at': lead.get(SheetColumns.LAST_MESSAGE.value, '')
-        }
-    }
-    
-    lead['status_info'] = status_info
-    lead.update(lead_details)
-    return jsonify(lead)
 
 @app.route("/api/lead/<lead_email>/generate-email", methods=['POST'])
 def generate_cold_email(lead_email):
@@ -79,27 +40,56 @@ def generate_cold_email(lead_email):
         return jsonify({'error': 'Lead not found'}), 404
 
     agency_info = get_agency_data()
-    company_description = generate_company_description(lead[SheetColumns.COMPANY_DOMAIN.value])
 
-    lead[SheetColumns.COMPANY_BACKGROUND.value] = company_description
-    update_sheet_row(
-        lead[SheetColumns.EMAIL.value],
-        {SheetColumns.COMPANY_BACKGROUND.value: company_description}
-    )
-    
+    description_result = get_description(lead_email)
+    if not description_result['success']:
+        return jsonify({'error': description_result['error']}), 400
+        
+    company_description = description_result['description']
     email_content = generate_1st_cold_email_content(lead, agency_info, company_description)
     formatted_content = format_email_content(email_content, lead, agency_info)
 
     return jsonify(formatted_content)
 
+
+@app.route("/api/lead/<lead_email>/details")
+def get_lead_details(lead_email):
+    lead = get_lead_by_email(lead_email)
+    if not lead:
+        return jsonify({'error': 'Lead not found'}), 404
+        
+    get_description(lead_email)
+    
+    lead_details = {
+        'basic_info': {
+            'email': lead.get(SheetColumns.EMAIL.value, ''),
+            'name': lead.get(SheetColumns.NAME.value, ''),
+            'role': lead.get(SheetColumns.ROLE.value, ''),
+            'headline': lead.get(SheetColumns.HEADLINE.value, ''),
+        },
+        'company_info': {
+            'company_name': lead.get(SheetColumns.COMPANY_NAME.value, ''),
+            'company_domain': lead.get(SheetColumns.COMPANY_DOMAIN.value, ''),
+            'company_size': lead.get(SheetColumns.COMPANY_SIZE.value, ''),
+            'industry': lead.get(SheetColumns.INDUSTRY.value, ''),
+            'company_description': lead.get(SheetColumns.COMPANY_BACKGROUND.value, '')
+        },
+        'email_status': {
+            'status': lead.get(SheetColumns.EMAIL_STATUS.value, ''),
+            'last_message': lead.get(SheetColumns.LAST_MESSAGE.value, ''),
+            'email_subject': lead.get(SheetColumns.COLD_EMAIL_SUBJECT.value, ''),
+            'email_content': lead.get(SheetColumns.EMAIL_CONTENT.value, ''),
+            'sender_email': lead.get(SheetColumns.SENDER_EMAIL.value, '')
+        }
+    }
+    
+    return jsonify(lead_details)
+
+
 @app.route("/api/lead/<lead_email>/send-email", methods=['POST'])
 def send_cold_email(lead_email):
     data = request.json
-    # !FIX: auto select sender email
-    sender_email = data.get('sender_email')
-    
     lead = get_lead_by_email(lead_email)
-    
     context = {
         'paragraphs': data['email_content'].split('\n\n'),
         'calendar_link': Config.CALENDAR_LINK,
@@ -118,11 +108,11 @@ def send_cold_email(lead_email):
             SheetColumns.EMAIL_STATUS.value: EmailStatus.SENT.value,
             SheetColumns.COLD_EMAIL_SUBJECT.value: data['email_subject'],
             SheetColumns.EMAIL_CONTENT.value: data['email_content'],
-            SheetColumns.SENDER_EMAIL.value: sender_email
+            SheetColumns.SENDER_EMAIL.value: response['details']['from']
         }
     )
         
-    return jsonify({'success': True, 'message': 'Email sent successfully', 'details': response })
+    return jsonify({'success': True, 'message': 'Email sent successfully', 'details': response})
 
 
 @app.route("/send_email", methods=["POST"])
