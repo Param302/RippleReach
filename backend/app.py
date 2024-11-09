@@ -32,6 +32,10 @@ def dashboard():
 @app.route("/api/send_emails")
 def send_emails():
     leads = format_keys(get_leads_data())
+    for lead in leads:
+        if not lead["email_status"]:
+            lead["email_status"] = EmailStatus.NEW.value
+        
     # return render_template('send_emails.html', leads=leads)
     return jsonify(leads)
 
