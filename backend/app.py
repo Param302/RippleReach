@@ -49,11 +49,12 @@ def generate_cold_email(lead_email):
 
     agency_info = get_agency_data()
 
-    description_result = get_description(lead_email)
-    if not description_result['success']:
-        return jsonify({'error': description_result['error']}), 400
+    if not (company_description := lead[SheetColumns.COMPANY_BACKGROUND.value]):
+        description_result = get_description(lead_email)
+        if not description_result['success']:
+            return jsonify({'error': description_result['error']}), 400
         
-    company_description = description_result['description']
+        company_description = description_result['description']
     email_content = generate_1st_cold_email_content(lead, agency_info, company_description)
     formatted_content = format_email_content(email_content, lead, agency_info)
 
@@ -65,9 +66,13 @@ def get_lead_details(lead_email):
     lead = get_lead_by_email(lead_email)
     if not lead:
         return jsonify({'error': 'Lead not found'}), 404
-        
-    get_description(lead_email)
     
+    if not lead.get(SheetColumns.COMPANY_BACKGROUND.value):
+        description_result = get_description(lead_email)
+        if not description_result['success']:
+            return jsonify({'error': description_result['error']}), 400
+    lead = get_lead_by_email(lead_email)
+
     lead_details = {
         'basic_info': {
             'email': lead.get(SheetColumns.EMAIL.value, ''),
@@ -99,7 +104,7 @@ def send_cold_email(lead_email):
     data = request.json
     lead = get_lead_by_email(lead_email)
     context = {
-        'paragraphs': data['email_content'].split('\n\n'),
+        'paragraphs': data['email'].split('\n\n'),
         'calendar_link': Config.CALENDAR_LINK,
         'sender_position': Config.AGENCY_INFO['sender']['position'],
         'agency_name': Config.AGENCY_INFO['name'],
@@ -108,14 +113,14 @@ def send_cold_email(lead_email):
     html_content = render_template('emails/email_template.html', **context)
     
     response = send_round_robin_email(lead[SheetColumns.EMAIL.value], 
-                            data['email_subject'], html_content)
-    
+                            data['subject'], html_content)
+
     update_sheet_row(
         lead[SheetColumns.EMAIL.value],
         {
             SheetColumns.EMAIL_STATUS.value: EmailStatus.SENT.value,
-            SheetColumns.COLD_EMAIL_SUBJECT.value: data['email_subject'],
-            SheetColumns.EMAIL_CONTENT.value: data['email_content'],
+            SheetColumns.COLD_EMAIL_SUBJECT.value: data['subject'],
+            SheetColumns.EMAIL_CONTENT.value: data['email'],
             SheetColumns.SENDER_EMAIL.value: response['details']['from']
         }
     )

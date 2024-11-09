@@ -40,7 +40,7 @@ def get_agency_data() -> dict[str, str]:
     data = sheet.get_all_records()
     return {item["Category"]: item["Description"] for item in data}
 
-def update_leads_sheet(row_index: int, data: dict):
+def update_leads_sheet(row_index: int, data: dict) -> bool:
     sheet = get_sheet(Config.SPREADSHEET_ID).worksheet("Leads")
 
     header_row = sheet.row_values(1)
@@ -52,6 +52,7 @@ def update_leads_sheet(row_index: int, data: dict):
     
     for col_index, value in updates_with_indices.items():
         sheet.update_cell(row_index, col_index, value)
+    return True
 
 def update_sheet_row(email: str, data: dict):
     sheet = get_sheet(Config.SPREADSHEET_ID).worksheet("Leads")
@@ -63,4 +64,4 @@ def update_sheet_row(email: str, data: dict):
     #     raise ValueError(f"Email {email} not found in sheet")
 
     # Update the row using existing function
-    update_leads_sheet(row_index, data)
+    return update_leads_sheet(row_index, data)

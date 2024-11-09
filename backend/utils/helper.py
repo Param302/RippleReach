@@ -4,7 +4,7 @@ from connectors.gsheet import get_lead_by_email, update_sheet_row
 
 def update_description(email: str, description: str) -> bool:
     """Update company description in the sheet"""
-    update_sheet_row(
+    return update_sheet_row(
         email,
         {SheetColumns.COMPANY_BACKGROUND.value: description}
     )
@@ -24,6 +24,5 @@ def get_description(email: str) -> dict:
         return {"success": False, "error": "Company domain not found"}
 
     new_description = generate_company_description(company_domain)
-    update_description(email, new_description)
 
     return {"success": True, "description": new_description}
