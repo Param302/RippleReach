@@ -10,8 +10,27 @@ app = Flask(__name__)
 
 @app.route("/")
 def dashboard():
-    leads = format_keys(get_leads_data())
-    return render_template('dashboard.html', leads=leads)
+    leads = get_leads_data()
+    total_leads = len(leads)
+    outeach = 0
+    conversations = 0
+
+    for i in leads:
+        print(i)
+        if i[SheetColumns.EMAIL_STATUS.value] == EmailStatus.SENT.value:
+            outeach += 1
+        if i[SheetColumns.EMAIL_STATUS.value] in (EmailStatus.REPLIED.value, EmailStatus.ACTIVE.value):
+            conversations += 1
+
+    return render_template('dashboard.html', total_leads=total_leads, outeach=outeach, conversations=conversations)
+
+
+@app.route("/send_emails")
+def send_emails():
+    leads = get_leads_data()
+    required_leads = format_keys([i for i in leads if not i.get(SheetColumns.EMAIL_STATUS.value) or i.get(SheetColumns.EMAIL_STATUS.value) == EmailStatus.NEW.value])
+    
+    return render_template('send_emails.html', leads=required_leads)
 
 @app.route("/api/lead/<lead_email>")
 def get_lead(lead_email):
@@ -76,6 +95,7 @@ def generate_cold_email(lead_email):
 @app.route("/api/lead/<lead_email>/send-email", methods=['POST'])
 def send_cold_email(lead_email):
     data = request.json
+    # !FIX: auto select sender email
     sender_email = data.get('sender_email')
     
     # Validate sender email
@@ -110,13 +130,6 @@ def send_cold_email(lead_email):
     )
         
     return jsonify({'success': True, 'message': 'Email sent successfully'})
-    
-
-@app.route("/send_emails", methods=["POST"])
-def send_emails():
-    """Process leads and send emails where needed"""
-    # Retrieves leads and agency info, processes each lead, and updates sheets
-    ...
 
 
 @app.route("/send_email", methods=["POST"])

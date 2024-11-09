@@ -1,21 +1,20 @@
 {% extends "base.html" %}
 
+{% block title %}Dashboard{% endblock %}
+
 {% block content %}
-<div class="dashboard">
-    <nav class="sidebar">
-        <h1>Leads</h1>
-        {% for lead in leads %}
-            <div class="nav-item" data-lead-email="{{ lead.email }}">
-                <div class="name"><strong>{{ lead.name }}</strong></div>
-                <div class="company_name">{{ lead.company_name | lower }}</div>
-            </div>
-        {% endfor %}
-    </nav>
-    
-    <main class="content">
-        <div id="lead-details" class="lead-details">
-            <div class="placeholder">Select a lead to view details</div>
-        </div>
-    </main>
-</div>
+<main>
+    <h1>Dashboard</h1>
+    <section>
+        <p>Total leads: {{ total_leads }}</p>
+        <p>Outreach: {{ outeach }}</p>
+        <p>Conversations: {{ conversations }}</p>
+    </section>
+    <h2>Actions</h2>
+    <section>
+        <a href="">Send cold emails</a>
+        <a href="">Monitor replies</a>
+        <a href="">Send replies</a>
+    </section>
+</main>
 {% endblock %}

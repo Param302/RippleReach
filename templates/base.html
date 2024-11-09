@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Leads Dashboard</title>
+    <title>{% block title %}{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
     <header>
-        <h1><a href="/">Leads Dashboard</a></h1>
+        <h1><a href="/">RippleReach</a></h1>
     </header>
     {% block content %}{% endblock %}
     <script type="text/javascript" src="{{ url_for('static', filename='js/main.js', v=1) }}"></script>
