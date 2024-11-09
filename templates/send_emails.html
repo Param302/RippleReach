@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Send Cold Emails</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/send_emails.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Send Cold Emails</h1>
+        
+        <div class="header-section">
+            <h2>Lead Previews</h2>
+            <button class="btn btn-primary" onclick="autoSendEmails()">Auto Send Cold Emails</button>
+        </div>
+
+        <table class="lead-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Company Name</th>
+                    <th>Company Website</th>
+                    <th>Role</th>
+                    <th>Company Size</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in leads %}
+                <tr id="lead-row-{{ lead.email }}">
+                    <td>{{ lead.name }}</td>
+                    <td>{{ lead.email }}</td>
+                    <td>{{ lead.company_name }}</td>
+                    <td>{{ lead.company_domain }}</td>
+                    <td>{{ lead.role }}</td>
+                    <td>{{ lead.company_size }}</td>
+                    <td id="status-{{ lead.email }}">New</td>
+                    <td>
+                        <button class="btn open-details" onclick="toggleDetails('{{ lead.email }}')">Open Details</button>
+                        <button class="btn btn-primary" onclick="generateAndSendEmail('{{ lead.email }}')">Send</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="8">
+                        <div id="details-{{ lead.email }}" class="lead-details" style="display: none;">
+                            <button class="btn btn-primary" onclick="generateEmail('{{ lead.email }}')">Generate Cold Email</button>
+                            <div id="email-content-{{ lead.email }}" style="display: none;">
+                                <input type="text" id="subject-{{ lead.email }}" class="email-content" placeholder="Email Subject">
+                                <textarea id="body-{{ lead.email }}" class="email-content" rows="6" placeholder="Email Body"></textarea>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+</body>
+</html> 
