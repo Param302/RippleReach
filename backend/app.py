@@ -20,7 +20,6 @@ def dashboard():
     conversations = 0
 
     for i in leads:
-        print(i)
         if i[SheetColumns.EMAIL_STATUS.value] == EmailStatus.SENT.value:
             outeach += 1
         if i[SheetColumns.EMAIL_STATUS.value] in (EmailStatus.REPLIED.value, EmailStatus.ACTIVE.value):
@@ -66,13 +65,12 @@ def get_lead_details(lead_email):
     lead = get_lead_by_email(lead_email)
     if not lead:
         return jsonify({'error': 'Lead not found'}), 404
-    
-    if not lead.get(SheetColumns.COMPANY_BACKGROUND.value):
+
+    if lead.get(SheetColumns.COMPANY_BACKGROUND.value) is None:
         description_result = get_description(lead_email)
         if not description_result['success']:
             return jsonify({'error': description_result['error']}), 400
     lead = get_lead_by_email(lead_email)
-
     lead_details = {
         'basic_info': {
             'email': lead.get(SheetColumns.EMAIL.value, ''),

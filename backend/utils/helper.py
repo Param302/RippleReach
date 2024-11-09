@@ -24,5 +24,5 @@ def get_description(email: str) -> dict:
         return {"success": False, "error": "Company domain not found"}
 
     new_description = generate_company_description(company_domain)
-
-    return {"success": True, "description": new_description}
+    
+    return {"success": True, "description": new_description} if update_description(email, new_description) else {"success": False, "error": "Failed to update description"}
