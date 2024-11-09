@@ -1,4 +1,5 @@
 from config import Config
+from flask_cors import CORS
 from utils.helper import get_description
 from constants import EmailStatus, SheetColumns
 from utils.email_integration import send_round_robin_email
@@ -8,6 +9,8 @@ from connectors.gsheet import get_leads_data, get_agency_data, update_sheet_row,
 from openai_llm import generate_1st_cold_email_content, generate_company_description, generate_standard_response
 
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
 
 @app.route("/")
 def dashboard():
