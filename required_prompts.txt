@@ -1,0 +1,3 @@
+remove send button for specific field and replace Generate COld Email button with Generate and Send Cold email button. And replace open details with Expand,. So, when expanded, it should show a container, below that lead which has heading "Full Details & Action"  followed by "Generate and Send Cold Email" button, a transparent button, border highlighted button. If status is new, it should only fetch the company description and show it in the container, when generate and cold email button is clicked, it should generate the email and the container's sub container should be divided into 2 parts, having company description on left, cold email on right,with heading cold email, email subject (editable) and email body (editable), 
+
+

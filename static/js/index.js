@@ -1,6 +1,73 @@
-function toggleDetails(email) {
+async function toggleDetails(email) {
     const details = document.getElementById(`details-${email}`);
-    details.style.display = details.style.display === 'none' ? 'block' : 'none';
+    const detailsContent = document.getElementById(`details-content-${email}`);
+    
+    if (details.style.display === 'none') {
+        details.style.display = 'block';
+        detailsContent.innerHTML = '<div class="loading">Loading details...</div>';
+        
+        try {
+            const response = await fetch(`/api/lead/${email}/details`);
+            const data = await response.json();
+            
+            const detailsHtml = `
+                <div class="details-container">
+                    <div class="details-left">
+                        <div class="details-section">
+                            <h3>Company Details</h3>
+                            <div class="detail-item">
+                                <strong>Company Name:</strong> ${data.company_info.company_name}
+                            </div>
+                            <div class="detail-item">
+                                <strong>Industry:</strong> ${data.company_info.industry}
+                            </div>
+                            <div class="detail-item">
+                                <strong>Company Size:</strong> ${data.company_info.company_size}
+                            </div>
+                            <div class="detail-item">
+                                <strong>Description:</strong>
+                                <p>${data.company_info.company_description || 'Not available'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="details-right">
+                        ${data.email_status.status.toUpperCase() === 'SENT' ? `
+                            <div class="details-section">
+                                <h3>Email History</h3>
+                                <div class="detail-item">
+                                    <strong>Status:</strong> 
+                                    <span class="status-chip status-${data.email_status.status.toLowerCase()}">
+                                        ${data.email_status.status}
+                                    </span>
+                                </div>
+                                <div class="detail-item">
+                                    <strong>Sent From:</strong> ${data.email_status.sender_email}
+                                </div>
+                                <div class="detail-item">
+                                    <strong>Subject:</strong> ${data.email_status.email_subject}
+                                </div>
+                                <div class="detail-item">
+                                    <strong>Content:</strong>
+                                    <div>${data.email_status.email_content}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <strong>Last Updated:</strong> ${data.email_status.last_message}
+                                </div>
+                            </div>
+                        ` : '<div class="details-section"><p>No email history available</p></div>'}
+                    </div>
+                </div>
+            `;
+            
+            detailsContent.innerHTML = detailsHtml;
+        } catch (error) {
+            console.error('Error fetching lead details:', error);
+            detailsContent.innerHTML = '<p class="error">Error loading details</p>';
+        }
+    } else {
+        details.style.display = 'none';
+    }
 }
 
 async function generateEmail(email) {
