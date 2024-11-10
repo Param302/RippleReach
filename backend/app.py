@@ -70,7 +70,9 @@ def get_lead_details(lead_email):
         description_result = get_description(lead_email)
         if not description_result['success']:
             return jsonify({'error': description_result['error']}), 400
-    lead = get_lead_by_email(lead_email)
+        
+        lead[SheetColumns.COMPANY_BACKGROUND.value] = description_result['description']
+    
     lead_details = {
         'basic_info': {
             'email': lead.get(SheetColumns.EMAIL.value, ''),
