@@ -1,4 +1,5 @@
 import json
+import re
 import requests
 from datetime import datetime
 from config import Config
@@ -32,10 +33,17 @@ class EmailSender:
         cls._current_index = (cls._current_index + 1) % len(Config.SENDER_CONFIGS)
         return config
 
+    def get_sender_config(self, email: str) -> dict:
+        """Returns the sender config for a given email"""
+        for config in Config.SENDER_CONFIGS:
+            if config['email'] == email:
+                return config
+        return None
+
 
 def validate_email_content(to_email: str, subject: str, html_content: str) -> None:
     """Validates email content before sending"""
-    if not to_email or '@' not in to_email:
+    if not to_email or not re.match(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', to_email):
         raise ValueError(f"Invalid recipient email: {to_email}")
         
     if not subject or len(subject.strip()) < 2:
@@ -45,24 +53,31 @@ def validate_email_content(to_email: str, subject: str, html_content: str) -> No
         raise ValueError(f"Invalid email content length: {len(html_content) if html_content else 0} chars")
 
 def send_round_robin_email(to_email: str, subject: str, html_content: str, attachments: list[dict] = None) -> dict:
-    """Send email using round-robin sender configuration with enhanced validation"""
-    start_time = datetime.now()
-    request_id = f"email_{start_time.strftime('%Y%m%d_%H%M%S')}"
-    
-    validate_email_content(to_email, subject, html_content)
+    """Send email using round-robin sender configuration with enhanced validation"""    
     sender_config = EmailSender.get_next_sender_config()
+    from_email = sender_config['email']
     
+    return send_email(from_email, to_email, subject, html_content, attachments, sender_config)
+
+
+def send_email(from_email: str, to_email: str, subject: str, html_content: str, attachments: list[dict] = None, sender_config: dict = None) -> dict:
+    validate_email_content(to_email, subject, html_content)
+
+    request_id = f"email_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     clean_subject = subject.strip().strip('"\'').strip()
-    from_email = f"{sender_config['display_name']} <{sender_config['email']}>"
-    
+    from_email_complete = f"{sender_config['display_name']} <{from_email}>"
+
     email_data = {
-        "from": from_email,
+        "from": from_email_complete,
         "to": to_email,
         "subject": clean_subject,
         "html": html_content,
         "attachments": attachments or []
     }
-    
+
+    if not sender_config:
+        sender_config = EmailSender.get_sender_config(from_email)
+
     # Make API request with timeout
     response = requests.post(
         "https://api.resend.com/emails",
@@ -94,6 +109,7 @@ def send_round_robin_email(to_email: str, subject: str, html_content: str, attac
         "email_id": response_data.get('id'),
         "details": {
             "from": from_email,
+            "from_email_complete": from_email_complete,
             "to": to_email,
             "subject": clean_subject,
             "sent_at": end_time.isoformat(),
