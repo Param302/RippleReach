@@ -2,12 +2,6 @@ import '@/app/globals.css';
 import Link from 'next/link'
 import { API_URL, API_ENDPOINTS } from '@/config';
 
-interface DashboardProps {
-  totalLeads: number;
-  outreach: number;
-  conversations: number;
-}
-
 async function getDashboardData() {
   const res = await fetch(`${API_URL}${API_ENDPOINTS.dashboard}`, {
     headers: {
@@ -21,14 +15,14 @@ async function getDashboardData() {
 }
 
 export default async function Dashboard() {
-  const { totalLeads, outreach, conversations } = await getDashboardData()
+  const { total_leads, outreach, conversations } = await getDashboardData()
   
   return (
     <main className="p-6">
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
       
       <section className="mb-8">
-        <p>Total leads: {totalLeads}</p>
+        <p>Total leads: {total_leads}</p>
         <p>Outreach: {outreach}</p>
         <p>Conversations: {conversations}</p>
       </section>
@@ -52,6 +46,12 @@ export default async function Dashboard() {
           className="text-blue-600 hover:underline"
         >
           Send replies
+        </Link>
+        <Link 
+          href="/update_emails" 
+          className="text-blue-600 hover:underline"
+        >
+          Update Email Inbox
         </Link>
       </section>
     </main>

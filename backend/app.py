@@ -138,6 +138,32 @@ def send_email():
 def get_sender_configs():
     return jsonify(Config.SENDER_CONFIGS)
 
+@app.route("/api/emails/")
+def get_emails():
+    emails = [config['email'] for config in Config.SENDER_CONFIGS]
+    return jsonify(emails)
+
+@app.route("/api/emails/update", methods=['POST'])
+def update_emails():
+    try:
+        data = request.json
+        new_emails = data.get('emails', [])
+        
+        # Update the email configurations
+        for i, email in enumerate(new_emails):
+            Config.SENDER_CONFIGS[i]['email'] = email
+            
+        return jsonify({
+            'success': True,
+            'message': 'Email configurations updated successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 if __name__ == '__main__':
     app.run(debug=True)
 
