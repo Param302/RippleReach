@@ -1,3 +1,4 @@
+import re
 from constants import SheetColumns
 from openai_llm import generate_company_description
 from connectors.gsheet import get_lead_by_email, update_sheet_row
@@ -26,3 +27,7 @@ def get_description(email: str) -> dict:
     new_description = generate_company_description(company_domain)
     
     return {"success": True, "description": new_description} if update_description(email, new_description) else {"success": False, "error": "Failed to update description"}
+
+
+def clean_json_string(s: str) -> str:
+    return re.sub(r"'(\d{10,13})'", r'"\1"', s).encode('utf-8').decode('unicode_escape').replace('\r', '').replace('\n', '{newline}').replace('\t', '{tab}')
