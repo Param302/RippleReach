@@ -7,6 +7,7 @@ from flask import Flask, render_template, jsonify, request
 from utils.formatter import format_email_content, format_keys
 from connectors.gsheet import get_leads_data, get_agency_data, update_sheet_row, get_lead_by_email
 from openai_llm import generate_1st_cold_email_content, generate_company_description, generate_standard_response
+from connectors.email_monitor import EmailMonitor
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
