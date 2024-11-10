@@ -1,12 +1,12 @@
 'use client';
 
 import '@/app/globals.css';
-import { useState } from "react";
-import { API_URL } from "@/config";
+import { useState, useEffect } from "react";
+import { API_ENDPOINTS, API_URL } from "@/config";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronDown, ChevronRight, ChevronUp, Loader2, Mail } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Loader2, Mail, RefreshCw } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
@@ -75,7 +75,8 @@ interface LeadDetails {
     };
 }
 
-export default function SendEmailsClient({ leads }: { leads: Lead[] }) {
+export default function SendEmailsClient() {
+    const [leads, setLeads] = useState<Lead[]>([]);
     const [expandedRow, setExpandedRow] = useState<string | null>(null);
     const [leadDetails, setLeadDetails] = useState<LeadDetails | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -83,6 +84,20 @@ export default function SendEmailsClient({ leads }: { leads: Lead[] }) {
     const [isSending, setIsSending] = useState(false);
     const [emailContents, setEmailContents] = useState<{[email: string]: {subject: string, email: string}}>({});
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    async function getLeads() {
+        const res = await fetch(`${API_URL}${API_ENDPOINTS.sendEmails}`, {
+          cache: 'no-store',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+        
+        if (!res.ok) throw new Error('Failed to fetch leads');
+        const data = await res.json();
+        setLeads(data);
+      } 
 
     const fetchLeadDetails = async (email: string) => {
         setIsLoading(true);
@@ -107,13 +122,22 @@ export default function SendEmailsClient({ leads }: { leads: Lead[] }) {
             const response = await fetch(`${API_URL}/api/lead/${email}/generate-email`, {
                 method: 'POST',
             });
+            
             const data = await response.json();
-            if (data && (data.subject || data.email)) {
-                setEmailContents(prev => ({ ...prev, [email]: { 
+            console.log(data);
+            console.log(data && data.subject && data.email);
+            if (data && data.subject && data.email) {
+                console.log('setting email contents');
+                const newEmailContents = { ...emailContents };
+                newEmailContents[email] = {
                     subject: data.subject,
                     email: data.email
-                }}));
+                };
+                setEmailContents(newEmailContents);
+                console.log(emailContents[email]);
             }
+            console.log(emailContents);
+            console.log(emailContents[email]);
         } catch (error) {
             console.error('Error generating email:', error);
         } finally {
@@ -167,10 +191,15 @@ export default function SendEmailsClient({ leads }: { leads: Lead[] }) {
             }));
             await new Promise(resolve => setTimeout(resolve, 5000));
         }
-        // window.location.reload();
-        // window.location.href = window.location.href;
+        refreshLeads();
     };
 
+    const refreshLeads = async () => {
+        setLeadDetails(null);
+        setIsLoading(true);
+        await getLeads();
+        setIsLoading(false);
+    };
 
 
     // const autoSendEmails = async () => {
@@ -209,53 +238,61 @@ export default function SendEmailsClient({ leads }: { leads: Lead[] }) {
         <div key="heading" className="container mx-auto p-6">
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold">Send Cold Emails</h1>
-                <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <AlertDialogTrigger asChild>
-                        <Button
-                            className="text-md font-medium px-8 py-4 bg-green-600 text-white hover:bg-green-700 transition-colors duration-200 flex items-center gap-2"
-                            disabled={leads.every(lead => lead.email_status.toLowerCase() === 'sent')}
-                        >
-                            <Mail className="h-5 w-5" />
-                            Send Bulk Emails{leads.filter(lead => lead.email_status.toLowerCase() === 'new').length > 0 ? ` (${leads.filter(lead => lead.email_status.toLowerCase() === 'new').length})` : ''}
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-white max-w-xl">
-                        <AlertDialogHeader>
-                            <AlertDialogTitle className="text-xl font-bold flex items-center gap-2">
-                                <Mail className="h-5 w-5" />
-                                Confirm Bulk Email Send
-                            </AlertDialogTitle>
-                            <div className="space-y-4 pt-2">
-                                <AlertDialogDescription>
-                                    You're about to send cold emails to <span className="font-semibold text-gray-900">{leads.filter(lead => lead.email_status.toLowerCase() === 'new').length} recipients</span>. This action will:
-                                </AlertDialogDescription>
-                                
-                                <ul className="list-disc pl-5 space-y-2 text-gray-600">
-                                    <li>Generate personalized emails for each recipient</li>
-                                    <li>Automatically send emails once generated</li>
-                                    <li>Update status for each lead in real-time</li>
-                                </ul>
-                                
-                                <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
-                                    <span className="text-amber-700 text-sm">
-                                        ⚠️ This action cannot be undone. Please ensure all lead information is correct before proceeding.
-                                    </span>
-                                </div>
-                            </div>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter className="gap-2">
-                            <AlertDialogCancel className="bg-gray-100 hover:bg-gray-200 transition-colors">
-                                Cancel
-                            </AlertDialogCancel>
-                            <AlertDialogAction 
-                                onClick={autoSendEmails}
-                                className="bg-green-600 text-white hover:bg-green-700 transition-colors"
+                <div className="flex gap-2">
+                    <Button
+                        onClick={refreshLeads}
+                        className="text-md font-medium px-4 py-4 hover:bg-gray-100 transition-colors duration-200 flex items-center gap-2"
+                    >
+                        <RefreshCw className={`h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
+                    </Button>
+                    <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button
+                                className="text-md font-medium px-8 py-4 bg-green-600 text-white hover:bg-green-700 transition-colors duration-200 flex items-center gap-2"
+                                disabled={leads.every(lead => lead.email_status.toLowerCase() === 'sent')}
                             >
-                                Confirm Send
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                                <Mail className="h-5 w-5" />
+                                Send Bulk Emails{leads.filter(lead => lead.email_status.toLowerCase() === 'new').length > 0 ? ` (${leads.filter(lead => lead.email_status.toLowerCase() === 'new').length})` : ''}
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-white max-w-xl">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="text-xl font-bold flex items-center gap-2">
+                                    <Mail className="h-5 w-5" />
+                                    Confirm Bulk Email Send
+                                </AlertDialogTitle>
+                                <div className="space-y-4 pt-2">
+                                    <AlertDialogDescription>
+                                        You're about to send cold emails to <span className="font-semibold text-gray-900">{leads.filter(lead => lead.email_status.toLowerCase() === 'new').length} recipients</span>. This action will:
+                                    </AlertDialogDescription>
+                                    
+                                    <ul className="list-disc pl-5 space-y-2 text-gray-600">
+                                        <li>Generate personalized emails for each recipient</li>
+                                        <li>Automatically send emails once generated</li>
+                                        <li>Update status for each lead in real-time</li>
+                                    </ul>
+                                    
+                                    <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+                                        <span className="text-amber-700 text-sm">
+                                            ⚠️ This action cannot be undone. Please ensure all lead information is correct before proceeding.
+                                        </span>
+                                    </div>
+                                </div>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="gap-2">
+                                <AlertDialogCancel className="bg-gray-100 hover:bg-gray-200 transition-colors">
+                                    Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction 
+                                    onClick={autoSendEmails}
+                                    className="bg-green-600 text-white hover:bg-green-700 transition-colors"
+                                >
+                                    Confirm Send
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
             </div>
 
             <div key="leads-header" className="bg-white rounded-lg shadow relative">
@@ -266,7 +303,7 @@ export default function SendEmailsClient({ leads }: { leads: Lead[] }) {
                         </div>
                     ))}
                 </div>
-                {leads.map((lead) => (
+                {(leads.length === 0 ? getLeads() : 1) && leads.map((lead) => (
                     <>
                         <div
                             id={lead.email}
