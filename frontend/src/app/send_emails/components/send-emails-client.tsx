@@ -90,6 +90,9 @@ export default function SendEmailsClient({ leads }: { leads: Lead[] }) {
             const response = await fetch(`${API_URL}/api/lead/${email}/details`);
             const data = await response.json();
             setLeadDetails(data);
+            if (data.email_status.email_subject && data.email_status.email_content) {
+                setEmailContents(prev => ({ ...prev, [email]: { subject: data.email_status.email_subject, email: data.email_status.email_content } }));
+            }
             const lead = leads.find(lead => lead.email === email);
         } catch (error) {
             console.error('Error fetching lead details:', error);
@@ -383,7 +386,7 @@ export default function SendEmailsClient({ leads }: { leads: Lead[] }) {
                                                                 )}
                                                             </Button>
                                                         )}
-                                                        {leadDetails?.email_status.sender_email && (
+                                                        {leadDetails?.email_status.sender_email && emailContents[lead.email]?.subject && (
                                                             <a href={`mailto:${leadDetails.email_status.sender_email}`}
                                                                 target="_blank" className="text-sm rounded-full bg-blue-100 text-blue-700 px-4 py-1 hover:bg-blue-200">{leadDetails.email_status.sender_email}</a>
                                                         )}
@@ -392,7 +395,7 @@ export default function SendEmailsClient({ leads }: { leads: Lead[] }) {
                                                         <div>
                                                             <h4 className="font-semibold text-sm text-gray-500">Subject</h4>
                                                             <Input id={`subject-input-${lead.email}`}
-                                                                value={emailContents[lead.email]?.subject || leadDetails?.email_status.email_subject}
+                                                                value={emailContents[lead.email]?.subject}
                                                                 onChange={(e) => setEmailContents(prev => ({ ...prev, [lead.email]: { ...prev[lead.email], subject: e.target.value } }))}
                                                                 disabled={lead.email_status === 'Sent'}
                                                             />
@@ -400,7 +403,7 @@ export default function SendEmailsClient({ leads }: { leads: Lead[] }) {
                                                         <div>
                                                             <h4 className="font-semibold text-sm text-gray-500">Body</h4>
                                                             <Textarea id={`email-input-${lead.email}`}
-                                                                value={emailContents[lead.email]?.email || leadDetails?.email_status.email_content}
+                                                                value={emailContents[lead.email]?.email}
                                                                 onChange={(e) => setEmailContents(prev => ({ ...prev, [lead.email]: { ...prev[lead.email], email: e.target.value } }))}
                                                                 disabled={lead.email_status === 'Sent'}
                                                                 rows={8} className="resize-none"
