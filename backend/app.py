@@ -164,6 +164,11 @@ def update_emails():
             'error': str(e)
         }), 500
 
+@app.route("/api/emails/details")
+def get_email_details():
+    email_configs = Config.SENDER_CONFIGS
+    return jsonify(email_configs)
+
 if __name__ == '__main__':
     app.run(debug=True)
 

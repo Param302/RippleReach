@@ -43,7 +43,7 @@ export default async function Dashboard() {
         <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
         <div className="w-3/5 grid grid-cols-1 md:grid-cols-3 gap-6">
           {stats.map((stat) => (
-            <Card key={stat.title} className="flex flex-row items-center justify-left pl-4">
+            <Card key={stat.title} className="flex flex-row items-center justify-left pl-4 cursor-default">
                   {stat.icon}
                 <div className="flex flex-col">
                   <CardHeader className="pb-2 flex items-center">
@@ -63,7 +63,7 @@ export default async function Dashboard() {
       <section>
         <h2 className="text-2xl font-semibold mb-6">Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow cursor-default">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Mail className="h-5 w-5" />
@@ -83,7 +83,7 @@ export default async function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow cursor-default">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Monitor className="h-5 w-5" />
@@ -103,7 +103,7 @@ export default async function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow cursor-default">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Reply className="h-5 w-5" />
@@ -123,7 +123,7 @@ export default async function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-lg transition-shadow">
+          <Card className="hover:shadow-lg transition-shadow cursor-default">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Inbox className="h-5 w-5" />
