@@ -1,6 +1,7 @@
 import os
 import logging
 from dotenv import load_dotenv
+from email_config_manager import EmailConfigManager
 
 load_dotenv()
 
@@ -20,29 +21,18 @@ class Config:
     STARTING_ROW = int(os.getenv("STARTING_ROW"))
     ENDING_ROW = int(os.getenv("ENDING_ROW", 0))  # 0 means process till the end
     
-    # Sender configurations with consistent domain ordering
+    __path = os.path.join(os.path.dirname(os.path.abspath(__file__)), os.getenv("EMAIL_CONFIG_FILE"))
+    __email_manager = EmailConfigManager(__path)
+
     SENDER_CONFIGS = [
         {
-            "email": "krishna@kuberanix.agency",  # Domain 1
+            "email": email,
             "display_name": "Krishna",
-            "api_key": RESEND_API_KEYS[0],
-            "password": os.getenv("EMAIL_PASSWORD_1")
-        },
-        # !ERROR for API KEY 2
-        # {
-        #     "email": "krishna@kuberanix.online",  # Domain 2
-        #     "display_name": "Krishna",
-        #     "api_key": RESEND_API_KEYS[1],
-        #     "password": os.getenv("EMAIL_PASSWORD_2")
-        # },
-        {
-            "email": "krishna@kuberanix.site",    # Domain 3
-            "display_name": "Krishna",
-            "api_key": RESEND_API_KEYS[2],
-            "password": os.getenv("EMAIL_PASSWORD_3")
+            "api_key": details['api_key'],
+            "password": details['password']
         }
+        for email, details in __email_manager.get_all_emails().items()
     ]
-
     # Design Configuration
     DESIGN = {
         'colors': {

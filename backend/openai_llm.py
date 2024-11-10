@@ -1,7 +1,7 @@
 import json
-from constants import SheetColumns
 import openai
 from config import Config
+from constants import SheetColumns
 from utils.scraper import get_company_description
 
 openai.api_key = Config.OPENAI_API_KEY
