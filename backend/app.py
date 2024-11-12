@@ -27,18 +27,29 @@ def dashboard():
         if i[SheetColumns.EMAIL_STATUS.value] in (EmailStatus.REPLIED.value, EmailStatus.ACTIVE.value):
             conversations += 1
 
-    # return render_template('dashboard.html', total_leads=total_leads, outeach=outeach, conversations=conversations)
     return jsonify({'total_leads': total_leads, 'outreach': outeach, 'conversations': conversations})
 
-@app.route("/api/send_emails")
-def send_emails():
-    leads = format_keys(get_leads_data())
+@app.route("/api/leads")
+def get_leads():
+    leads = get_leads_data()
     for lead in leads:
-        if not lead["email_status"]:
-            lead["email_status"] = EmailStatus.NEW.value
+        if not lead[SheetColumns.EMAIL_STATUS.value]:
+            lead[SheetColumns.EMAIL_STATUS.value] = EmailStatus.NEW.value
         
-    # return render_template('send_emails.html', leads=leads)
-    return jsonify(leads)
+    return jsonify(format_keys(leads))
+
+@app.route("/api/leads/active-replied")
+def get_active_replied_leads():
+    leads = get_leads_data()  # Fetch all leads
+    filtered_leads = [
+        lead for lead in leads 
+        if lead[SheetColumns.EMAIL_STATUS.value] in (EmailStatus.ACTIVE.value, EmailStatus.REPLIED.value)
+    ]
+
+    if not filtered_leads:
+        return jsonify({'success': False, 'message': 'No leads with active or replied status found'}), 404
+
+    return jsonify({'success': True, 'leads': format_keys(filtered_leads)})
 
 
 @app.route("/api/lead/<lead_email>/generate-email", methods=['POST'])
@@ -128,12 +139,6 @@ def send_cold_email(lead_email):
     )
         
     return jsonify({'success': True, 'message': 'Email sent successfully', 'details': response})
-
-
-@app.route("/send_email", methods=["POST"])
-def send_email():
-    """Send an email to a single recipient"""
-    ...
 
 @app.route("/api/sender-configs")
 def get_sender_configs():

@@ -14,7 +14,6 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -86,7 +85,7 @@ export default function SendEmailsClient() {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
     async function getLeads() {
-        const res = await fetch(`${API_URL}${API_ENDPOINTS.sendEmails}`, {
+        const res = await fetch(`${API_URL}/api/leads`, {
           cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',
