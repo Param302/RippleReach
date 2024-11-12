@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { API_URL } from '@/config';
 
 interface Lead {
@@ -40,33 +40,41 @@ export default function Conversations() {
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchLeads = async () => {
-            try {
-                const response = await fetch(`${API_URL}/api/leads/active-replied`, {
-                    cache: 'no-store',
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                });
-                const data = await response.json();
-                console.log(data);
-                setLeads(data.leads);
-            } catch (error) {
-                console.error('Error fetching leads:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
+    const fetchLeads = async () => {
+        try {
+            const response = await fetch(`${API_URL}/api/leads/active-replied`, {
+                cache: 'no-store',
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            const data = await response.json();
+            console.log(data);
+            setLeads(data.leads);
+        } catch (error) {
+            console.error('Error fetching leads:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchLeads();
     }, []);
 
     return (
         <main className="grid grid-cols-[1fr_3fr] h-screen">
             <section key="leads-panel" className="border-r border-gray-200 overflow-y-scroll">
-                <h2 className="text-xl font-bold p-4 border-b bg-gray-200">Conversations</h2>
+                <div className="flex justify-between items-center p-4 border-b bg-gray-200">
+                    <h2 className="text-xl font-bold">Conversations</h2>
+                    <Button
+                        onClick={fetchLeads}
+                        className="text-md font-medium flex items-center gap-2"
+                    >
+                        <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+                    </Button>
+                </div>
                 {loading ? (
                     <div className="flex items-center justify-center h-full">
                         <Loader2 className="h-6 w-6 animate-spin" />
@@ -88,7 +96,6 @@ export default function Conversations() {
                 {selectedLead ? (
                     <div>
                         <h2 className="text-xl font-bold mb-4">Conversations with {selectedLead.name}</h2>
-                        {/* Here you can add the chat interface */}
                         <div className="border rounded-lg p-4 h-full">
                             <p>Chat messages will appear here...</p>
                         </div>
