@@ -343,52 +343,94 @@ export default function UpdateEmailBox() {
                                         </div>
                                     </div>
                                     <div className="ml-36 -mt-2 pl-2">
-                                        <AlertDialog>
-                                            <AlertDialogTrigger className="text-sm text-blue-600 hover:underline">
-                                                Click here for API key setup guide
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent className="bg-white rounded-lg shadow-xl border border-gray-100 p-6 max-w-md mx-auto select-none">
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle className="text-2xl font-bold text-gray-900">
-                                                        How to get your API Key
-                                                    </AlertDialogTitle>
-                                                    <AlertDialogDescription className="mt-4 space-y-4">
-                                                        <div className="flex flex-col gap-4">
-                                                            {[
-                                                                `Log in to your email provider's developer console`,
-                                                                "Navigate to the API section",
-                                                                "Create a new API key with email sending permissions", 
-                                                                "Copy the generated API key",
-                                                                "Paste it in the API Key field above"
-                                                            ].map((step, i) => (
-                                                                <div key={i} className="flex items-start gap-3">
-                                                                    <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-medium">
-                                                                        {i + 1}
-                                                                    </div>
-                                                                    <div className="text-gray-600">{step}</div>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger className="text-sm text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1">
+                                            View API key setup guide
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent className="bg-white rounded-lg shadow-xl border border-gray-100 p-8 max-w-2xl mx-auto">
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle className="text-2xl font-bold text-gray-900 mb-4">
+                                                    Ripple Reach Resend Setup Guide
+                                                </AlertDialogTitle>
+                                                <div className="space-y-6">
+                                                    <div className="space-y-4">
+                                                        <h3 className="font-semibold text-lg text-gray-800">Follow these steps:</h3>
+                                                        <ol className="space-y-6">
+                                                            <li className="space-y-2">
+                                                                <div className="flex items-center gap-2 font-semibold text-gray-900">
+                                                                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-black text-white text-sm">1</div>
+                                                                    Create a New Resend Account
                                                                 </div>
-                                                            ))}
-                                                        </div>
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter className="mt-6">
-                                                    <AlertDialogAction className="w-full bg-black text-white hover:bg-black/90 transition-colors">
-                                                        Got it
-                                                    </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                                                <ul className="ml-8 space-y-1 text-gray-600">
+                                                                    <li>• Visit <strong>resend.com</strong> and click "Sign Up"</li>
+                                                                    <li>• Use the same email as your Ripple Reach account</li>
+                                                                    <li>• Complete verification via email</li>
+                                                                    <li>• Set up account details and security</li>
+                                                                </ul>
+                                                            </li>
+
+                                                            <li className="space-y-2">
+                                                                <div className="flex items-center gap-2 font-semibold text-gray-900">
+                                                                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-black text-white text-sm">2</div>
+                                                                    Connect Your Domain
+                                                                </div>
+                                                                <div className="ml-8 space-y-3">
+                                                                    <details className="group" onClick={(e) => e.currentTarget.toggleAttribute('open')}>
+                                                                        <summary className="flex items-center gap-2 cursor-pointer text-gray-700 hover:text-gray-900">
+                                                                            <ChevronRight className="h-4 w-4 group-open:rotate-90 transition-transform" />
+                                                                            <strong>Namecheap Instructions</strong>
+                                                                        </summary>
+                                                                        <div className="mt-2 ml-6 text-gray-600 space-y-1">
+                                                                            <p>• Access <strong>DNS Manager</strong> in Namecheap</p>
+                                                                            <p>• Add <strong>TXT record</strong>: @ → (provided by resend)</p>
+                                                                            <p>• Add <strong>CNAME</strong>: resend → (provided by resend)</p>
+                                                                            <p>• Set <strong>TTL</strong> to 14440 for both</p>
+                                                                        </div>
+                                                                    </details>
+
+                                                                    <details className="group" onClick={(e) => e.currentTarget.toggleAttribute('open')}>
+                                                                        <summary className="flex items-center gap-2 cursor-pointer text-gray-700 hover:text-gray-900">
+                                                                            <ChevronRight className="h-4 w-4 group-open:rotate-90 transition-transform" />
+                                                                            <strong>GoDaddy Instructions</strong>
+                                                                        </summary>
+                                                                        <div className="mt-2 ml-6 text-gray-600 space-y-1">
+                                                                            <p>• Navigate to <strong>Domain Manager</strong></p>
+                                                                            <p>• Add <strong>TXT record</strong>: @ → (provided by resend)</p>
+                                                                            <p>• Add <strong>CNAME</strong>: resend → (provided by resend)</p>
+                                                                            <p>• Set <strong>TTL</strong> to 1 hour</p>
+                                                                        </div>
+                                                                    </details>
+                                                                </div>
+                                                            </li>
+
+                                                            <li className="space-y-2">
+                                                                <div className="flex items-center gap-2 font-semibold text-gray-900">
+                                                                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-black text-white text-sm">3</div>
+                                                                    Generate & Copy API Key
+                                                                </div>
+                                                                <ul className="ml-8 space-y-1 text-gray-600">
+                                                                    <li>• Go to Account Settings → API Keys</li>
+                                                                    <li>• Generate a new API key</li>
+                                                                    <li>• Copy and store it securely</li>
+                                                                </ul>
+                                                            </li>
+                                                        </ol>
+                                                    </div>
+                                                </div>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter className="mt-8">
+                                                <AlertDialogAction className="w-full bg-black text-white hover:bg-black/90 transition-colors py-2 rounded-md">
+                                                    Got it
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                     </div>
                                 </div>
                             </div>
                         )}
                     </div>
                 ))}
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                    <p className="text-sm text-yellow-800">
-                        <span className="font-semibold">Important</span><br/> After updating email configurations, make sure to update the corresponding email passwords in the backend environment variables.
-                    </p>
-                </div>
                 <button
                     type="submit"
                     disabled={isLoading}
