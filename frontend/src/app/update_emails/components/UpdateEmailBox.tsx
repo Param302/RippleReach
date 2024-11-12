@@ -20,7 +20,7 @@ export default function UpdateEmailBox() {
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [expandedRow, setExpandedRow] = useState<string | null>(null);
-    const [emails, setEmails] = useState<{ email: string; display_name: string; password: string; api_key: string; }[]>([]);
+    const [emails, setEmails] = useState<{ email: string; display_name: string; password: string; api_key: string; isEmpty?: boolean; }[]>([]);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [showApiKey, setShowApiKey] = useState(false);
@@ -53,7 +53,25 @@ export default function UpdateEmailBox() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        const hasEmptyFields = emails.some(emailObj => !emailObj.email || !emailObj.display_name || !emailObj.password || !emailObj.api_key);
+        if (hasEmptyFields) {
+            console.log("Emails have empty fields!");
+            console.log(emails);
 
+            setEmails(prevEmails => 
+                prevEmails.map(emailObj => ({
+                    ...emailObj,
+                    isEmpty: !emailObj.email || !emailObj.display_name || !emailObj.password || !emailObj.api_key // Add a flag for empty fields
+                }))
+            );
+
+            setIsLoading(false);
+            return;
+        }
+        console.log("Emails are valid!");
+        console.log(emails);
+
+        setIsLoading(false);
         try {
             const response = await fetch(`${API_URL}/api/emails/update`, {
                 method: 'POST',
@@ -62,9 +80,15 @@ export default function UpdateEmailBox() {
                 },
                 body: JSON.stringify({ emails }),
             });
-
             if (!response.ok) throw new Error('Failed to update emails');
             
+            setEmails(prevEmails => 
+                prevEmails.map(emailObj => ({
+                    ...emailObj,
+                    isEmpty: false
+                }))
+            );
+
             setShowSuccess(true);
             setTimeout(() => {
                 router.push('/');
@@ -196,13 +220,16 @@ export default function UpdateEmailBox() {
                 {emails.map((config, index) => (
                     <div 
                         key={index} 
-                        className="space-y-2 p-2 rounded-md hover:bg-gray-50 transition-colors cursor-pointer"
+                        className={`space-y-2 p-2 rounded-md hover:bg-gray-50 transition-colors cursor-pointer ${config.isEmpty ? 'border border-red-500' : ''}`}
                         onClick={(e) => {
                             e.preventDefault();
                             setExpandedRow(expandedRow === config.email ? null : config.email);
                             e.currentTarget.classList.add('bg-gray-50');
                         }}
                     >
+                        {config.isEmpty && (
+                            <div className="text-sm text-red-500">Please fill in all fields</div>
+                        )}
                         <div className="flex justify-between items-center p-2">
                             <span className="text-gray-500 font-semibold">
                                 {`#${index + 1} ${config.display_name || 'No Display Name'}`} 
@@ -266,6 +293,16 @@ export default function UpdateEmailBox() {
                                                 type={showPassword ? "text" : "password"}
                                                 defaultValue={config.password} 
                                                 className="w-full pr-10"
+                                                onChange={(e) => {
+                                                    config.isEmpty = e.target.value === '';
+                                                    e.preventDefault();
+                                                    const updatedEmails = emails.map((emailObj) => 
+                                                        emailObj.email === config.email 
+                                                            ? { ...emailObj, password: e.target.value } 
+                                                            : emailObj
+                                                    );
+                                                    setEmails(updatedEmails);
+                                                }}
                                             />
                                             <button
                                                 type="button"
@@ -285,6 +322,16 @@ export default function UpdateEmailBox() {
                                                 type={showApiKey ? "text" : "password"}
                                                 defaultValue={config.api_key}
                                                 className="w-full pr-10"
+                                                onChange={(e) => {
+                                                    config.isEmpty = e.target.value === '';
+                                                    e.preventDefault();
+                                                    const updatedEmails = emails.map((emailObj) => 
+                                                        emailObj.email === config.email 
+                                                            ? { ...emailObj, api_key: e.target.value } 
+                                                            : emailObj
+                                                    );
+                                                    setEmails(updatedEmails);
+                                                }}
                                             />
                                             <button
                                                 type="button"
