@@ -2,16 +2,20 @@
 import { API_URL } from '@/config';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { Loader2, Trash2, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+
+const validateEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+};
 
 export default function UpdateEmailBox() {
     const router = useRouter();
-    const { toast } = useToast();
     const [countdown, setCountdown] = useState(5);
     const [isLoading, setIsLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
@@ -20,6 +24,9 @@ export default function UpdateEmailBox() {
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
     const [showApiKey, setShowApiKey] = useState(false);
+    const [newEmail, setNewEmail] = useState('');
+    const [newDisplayName, setNewDisplayName] = useState('');
+    const [isPopupOpen, setIsPopupOpen] = useState(false);
 
     useEffect(() => {
         (async () => {
@@ -64,14 +71,39 @@ export default function UpdateEmailBox() {
             }, 5000);
 
         } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: "Failed to update emails. Please try again.",
-            });
+            console.error(error);
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleAddEmail = () => {
+        if (newEmail && newDisplayName) {
+            const emailExists = emails.some(emailObj => emailObj.email === newEmail);
+            if (emailExists) {
+                return; // Prevent adding the email
+            }
+            setEmails((prevEmails) => [
+                ...prevEmails,
+                {
+                    email: newEmail,
+                    display_name: newDisplayName,
+                    password: '',
+                    api_key: '',
+                }
+            ]);
+            setNewEmail('');
+            setNewDisplayName('');
+            setIsPopupOpen(false);
+        }
+    };
+
+    const handleDelete = async (email: string) => {
+        console.log("Email to delete:", email);
+        console.log("Emails:", emails);
+        const updatedEmails = emails.filter(e => e.email !== email);
+        setEmails(updatedEmails);
+        console.log("Updated emails:", updatedEmails);
     };
 
     return (
@@ -91,7 +123,76 @@ export default function UpdateEmailBox() {
                 </div>
             )}
             
-            <form onSubmit={handleSubmit} className="space-y-2">
+            <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
+                <Button 
+                    className="self-end bg-black/80 text-gray-100 hover:bg-black flex items-center gap-2 mb-4"
+                    onClick={(e) => {e.preventDefault(); setIsPopupOpen(true);}}
+                >
+                    <Plus className="h-4 w-4" />
+                    Add New Credentials
+                </Button>
+                {isPopupOpen && (
+                    <Dialog open={isPopupOpen} onOpenChange={setIsPopupOpen}>
+                        <DialogContent className="bg-white rounded-lg shadow-xl border border-gray-100 p-10 max-w-md mx-auto select-none">
+                            <DialogHeader>
+                                <DialogTitle className="text-2xl text-center font-semibold text-gray-900 mb-4">Add New Email</DialogTitle>
+                                <DialogDescription className="text-gray-600 text-base leading-relaxed">
+                                    Enter the display name and email address you want to add
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-2">
+                                <input
+                                    type="text"
+                                    value={newDisplayName}
+                                    onChange={(e) => {
+                                        e.preventDefault();
+                                        setNewDisplayName(e.target.value);
+                                    }}
+                                    className={`w-full px-4 py-2 text-gray-900 border ${!newDisplayName ? 'border-red-500' : 'border-gray-200'} rounded-md focus:outline-none focus:ring-2 focus:ring-black/80`}
+                                    placeholder="Display Name"
+                                    required
+                                />
+                                <input
+                                    type="email"
+                                    value={newEmail}
+                                    onChange={(e) => {
+                                        e.preventDefault();
+                                        setNewEmail(e.target.value);
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && newEmail && validateEmail(newEmail)) {
+                                            e.preventDefault();
+                                            handleAddEmail();
+                                        }
+                                    }}
+                                    className={`w-full px-4 py-2 text-gray-900 border ${!newEmail || validateEmail(newEmail) ? 'border-gray-200' : 'border-red-500'} rounded-md focus:outline-none focus:ring-2 focus:ring-black/80`}
+                                    placeholder="example@domain.com"
+                                    required
+                                />
+                                {newEmail && !validateEmail(newEmail) && (
+                                    <div className="text-sm text-red-500">Please enter a valid email address</div>
+                                )}
+                                {emails.some(emailObj => emailObj.email === newEmail) && (
+                                    <div className="text-sm text-red-500">This email already exists.</div>
+                                )}
+                            </div>
+                            <DialogFooter className="flex gap-3 mt-4">
+                                <Button 
+                                    onClick={(e) => {e.preventDefault(); setIsPopupOpen(false);}} 
+                                    className="flex-1 px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button 
+                                    onClick={(e) => {e.preventDefault(); handleAddEmail();}}
+                                    className="flex-1 px-4 py-2 bg-black/80 text-gray-100 hover:bg-black rounded-md transition-colors"
+                                >
+                                    Create
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                    )}
                 {emails.map((config, index) => (
                     <div 
                         key={index} 
@@ -103,7 +204,12 @@ export default function UpdateEmailBox() {
                         }}
                     >
                         <div className="flex justify-between items-center p-2">
-                            <span className="text-gray-500 font-semibold">{`#${index + 1} ${config.display_name}`}<span className="ml-10 bg-orange-100 text-orange-800 text-sm font-medium px-4 py-1 rounded-full">{config.email}</span></span>
+                            <span className="text-gray-500 font-semibold">
+                                {`#${index + 1} ${config.display_name || 'No Display Name'}`} 
+                                <span className="ml-10 bg-orange-100 text-orange-800 text-sm font-medium px-4 py-1 rounded-full">
+                                    {config.email}
+                                </span>
+                            </span>
                             <span className="text-xl">
                                 {expandedRow === config.email ? (
                                     <ChevronDown className="h-4 w-4" />
@@ -113,7 +219,7 @@ export default function UpdateEmailBox() {
                             </span>
                         </div>
                         {expandedRow === config.email && (
-                            <div className="mt-2 p-4 border border-gray-200 rounded-md" onClick={e => e.stopPropagation()}>
+                            <div className="mt-2 p-4 border border-gray-200 rounded-md" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
                                 <div className="mb-4 flex justify-between items-center">
                                     <h3 className="font-semibold">Details</h3>
                                     <AlertDialog>
@@ -142,6 +248,7 @@ export default function UpdateEmailBox() {
                                                 <AlertDialogAction 
                                                     onClick={() => {
                                                         console.log("YES");
+                                                        handleDelete(config.email);
                                                     }}
                                                     className="flex-1 px-4 py-2 text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors"
                                                 >
@@ -152,14 +259,6 @@ export default function UpdateEmailBox() {
                                     </AlertDialog>
                                 </div>
                                 <div className="space-y-2">
-                                    <div className="flex items-center gap-4">
-                                        <label className="w-32 text-sm font-semibold">Display Name</label>
-                                        <Input defaultValue={config.display_name} className="flex-1"/>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <label className="w-32 text-sm font-semibold">Email</label>
-                                        <Input defaultValue={config.email} className="flex-1"/>
-                                    </div>
                                     <div className="flex items-center gap-4">
                                         <label className="w-32 text-sm font-semibold">Password</label>
                                         <div className="flex-1 relative">
