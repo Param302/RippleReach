@@ -41,7 +41,7 @@ class EmailMonitor:
                 _, messages = mail.search(None, search_criteria)
                 message_nums = messages[0].split()
                 message_nums.reverse()  # Newest first
-                conversations[email_id] = []
+                conversations[email_id] = {}
                 for num in message_nums:
                     _, msg_data = mail.fetch(num, '(RFC822)')
                     email_message = email.message_from_bytes(msg_data[0][1])
@@ -54,15 +54,16 @@ class EmailMonitor:
                             mail, email_message)
                         latest_message = thread_messages[-1]
                         conv = extract_email_conversation(latest_message)
-                        for mail_id in conv:
-                            conversations[email_id].extend(conv[mail_id])
+                        print("CONVERSATION", conv)
+                        conversations[email_id] = {**conversations[email_id], **conv}
+                        print("ALL CONVERSATIONS", conversations)
         finally:
             mail.close()
             mail.logout()
             for lead_email in conversations:
                 if not conversations[lead_email]:
                     continue
-                self._update_lead_in_sheet(lead_email, conversations[lead_email])
+                # self._update_lead_in_sheet(lead_email, conversations[lead_email])
 
     def _get_thread_participants(self, email_message):
         """Extract all email addresses from message headers"""

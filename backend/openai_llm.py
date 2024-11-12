@@ -119,9 +119,10 @@ def generate_standard_response(lead_info, previous_conversation):
 def extract_email_conversation(email_body: str) -> str:
     prompt = (
         f"Extract the email conversation and format it as a JSON dictionary of dictionaries where:\n"
-        "The outer dictionary has keys as the sender's email address and values as lists of dictionaries with the following keys:\n"
-        "- timestamp: the timestamp of the message in ISO format (YYYY-MM-DD HH:MM:SS) with the time zone\n"
+        "The outer dictionary has keys as the timestamp of the message and values as dictionary with the following keys:\n"
+        "- sender: the sender's email address\n"
         "- message: the actual message\n\n"
+        "For the key timestamp in outer dictionary, usethe timestamp of the message in ISO format (YYYY-MM-DD HH:MM:SS) with the time zone\n"
         "Remove any duplicate messages\n"
         "Maintain chronological order\n"
         "Maintain new line characters in the message\n"

@@ -43,27 +43,36 @@ def get_leads():
 
 def get_active_replied_leads():
     leads = get_leads_data()  # Fetch all leads
-    filtered_leads = {
-        lead[SheetColumns.EMAIL.value]: lead for lead in leads 
+    filtered_leads = [
+
+        lead for lead in leads 
         if lead[SheetColumns.EMAIL_STATUS.value] in (EmailStatus.ACTIVE.value, EmailStatus.REPLIED.value)
-    }
+    ]
+    # filtered_leads = {
+    #     lead[SheetColumns.EMAIL.value]: lead for lead in leads 
+    #     if lead[SheetColumns.EMAIL_STATUS.value] in (EmailStatus.ACTIVE.value, EmailStatus.REPLIED.value)
+    # }
 
     return filtered_leads
 
 
-# @app.route("/api/leads/active-replied")
-# def get_conversations():
-#     return jsonify({'success': True, 'leads': get_active_replied_leads()})
+@app.route("/api/leads/conversations")
+def get_conversations():
+    return jsonify({'success': True, 'leads': format_keys(get_active_replied_leads())})
 
 
 @app.route("/api/leads/monitor")
 def refresh_leads():
-    active_replied_leads = get_leads_data()
+    leads = get_leads_data()
     for monitor in [EmailMonitor(config) for config in Config.SENDER_CONFIGS]:
-        print(active_replied_leads)
-        monitor.check_replies(active_replied_leads)
+        print(leads)
+        monitor.check_replies(leads)
 
-    return jsonify({'success': True, 'leads': get_active_replied_leads()})
+    active_replied_leads = format_keys(get_active_replied_leads())
+    # for lead in leads:
+    #     leads[lead] = format_keys(leads[lead])
+    data = {}
+    return jsonify({'success': True, 'leads': active_replied_leads})
 
 
 @app.route("/api/lead/<lead_email>/generate-email", methods=['POST'])
