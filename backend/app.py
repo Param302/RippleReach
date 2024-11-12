@@ -2,7 +2,7 @@ import os
 from config import Config
 from flask_cors import CORS
 from utils.helper import get_description
-from constants import EmailStatus, SheetColumns
+from constants import EmailStatus, SenderType, SheetColumns
 from utils.email_integration import send_round_robin_email
 from flask import Flask, render_template, jsonify, request
 from utils.formatter import format_email_content, format_keys
@@ -12,6 +12,9 @@ from connectors.email_monitor import EmailMonitor
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
+
+with app.app_context():
+    EMAIL_MONITORS = [EmailMonitor(config) for config in Config.SENDER_CONFIGS]
 
 
 @app.route("/")
@@ -38,7 +41,6 @@ def get_leads():
         
     return jsonify(format_keys(leads))
 
-@app.route("/api/leads/active-replied")
 def get_active_replied_leads():
     leads = get_leads_data()  # Fetch all leads
     filtered_leads = [
@@ -46,10 +48,28 @@ def get_active_replied_leads():
         if lead[SheetColumns.EMAIL_STATUS.value] in (EmailStatus.ACTIVE.value, EmailStatus.REPLIED.value)
     ]
 
-    if not filtered_leads:
-        return jsonify({'success': False, 'message': 'No leads with active or replied status found'}), 404
+    # if not filtered_leads:
+    #     return jsonify({'success': False, 'message': 'No leads with active or replied status found'}), 404
 
     return jsonify({'success': True, 'leads': format_keys(filtered_leads)})
+
+
+@app.route("/api/leads/active-replied")
+def get_conversations():
+    return get_active_replied_leads()
+
+
+
+@app.route("/api/leads/monitor")
+def refresh_leads():
+    # for monitor in EMAIL_MONITORS:
+    #     monitor.check_replies()
+    EMAIL_MONITORS[1].check_replies()
+    x = get_active_replied_leads()
+    print(x)
+    # leads = get_leads_data()
+    # return jsonify({'success': True, 'leads': format_keys(leads)})
+    return x
 
 
 @app.route("/api/lead/<lead_email>/generate-email", methods=['POST'])
@@ -134,7 +154,9 @@ def send_cold_email(lead_email):
             SheetColumns.EMAIL_STATUS.value: EmailStatus.SENT.value,
             SheetColumns.COLD_EMAIL_SUBJECT.value: data['subject'],
             SheetColumns.EMAIL_CONTENT.value: data['email'],
-            SheetColumns.SENDER_EMAIL.value: response['details']['from']
+            SheetColumns.SENDER_EMAIL.value: response['details']['from'],
+            SheetColumns.HTML_EMAIL_CONTENT.value: html_content,
+            SheetColumns.LAST_SENDER.value: SenderType.AGENCY.value
         }
     )
         
