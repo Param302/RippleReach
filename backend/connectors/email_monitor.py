@@ -2,6 +2,7 @@ import imaplib
 import email
 from email.header import decode_header
 import json
+from openai_llm import extract_email_conversation, extract_text_from_email_body
 from utils.helper import clean_json_string
 from connectors.gsheet import get_lead_by_email, get_leads_data, update_sheet_row
 from constants import SenderType, SheetColumns, EmailStatus
@@ -45,7 +46,9 @@ class EmailMonitor:
             # Search for all messages
             # search_criteria = f'SUBJECT "{self.config["email"]}"'
             # I want to search for all messages that have the lead's email as a participant, can be from can be to
-            search_criteria = f'OR FROM "{l}" TO "{l}"'
+            # search_criteria = f'OR FROM "{l}" TO "{l}"'
+            search_criteria = f'(SUBJECT "{list(lead_emails.items())[1][1][SheetColumns.COLD_EMAIL_SUBJECT.value]}")'
+            print(search_criteria)
             _, messages = mail.search(None, search_criteria)
             message_nums = messages[0].split()
             message_nums.reverse()  # Newest first
@@ -55,28 +58,35 @@ class EmailMonitor:
             for num in message_nums:
                 _, msg_data = mail.fetch(num, '(RFC822)')
                 email_message = email.message_from_bytes(msg_data[0][1])
-                print("EMAIL MESSAGE: ", email_message)
+                # print("EMAIL MESSAGE: ", email_message)
                 participants = self._get_thread_participants(email_message)
+                print("PARTICIPANTS: ", participants)
                 thread_id = email_message.get(
                     'Message-ID', '') or email_message.get('Thread-Index', '')
-
+                print("THREAD ID: ", thread_id)
                 matching_leads = [
                     email for email in participants if email.lower() in lead_emails]
 
                 if matching_leads and thread_id not in processed_threads:
                     lead_email = matching_leads[0]
                     processed_threads.add(thread_id)
-
+                    print("PROCESSED THREADS: ", processed_threads)
                     try:
                         thread_messages = self._get_thread_messages(
                             mail, email_message)
                         latest_message = thread_messages[-1]
-
+                        print("LATEST MESSAGE: ", latest_message)
                         latest_sender = self._parse_email_address(
                             latest_message['From'])
-                        if latest_sender.lower() == lead_email.lower():
-                            body = self._get_email_body(latest_message)
-                            self._update_lead_in_sheet(lead_email, body)
+                        body = extract_text_from_email_body(
+                            self._get_email_body(latest_message))
+                        print("BODY: ", body)
+                        conv = extract_email_conversation(body)
+                        print("CONVERSATION: ", conv)
+                        # if latest_sender.lower() == lead_email.lower():
+                        #     body = self._get_email_body(latest_message)
+                        #     print("BODY: ", body)
+                            # self._update_lead_in_sheet(lead_email, body)
                     except Exception as e:
                         print(f"Error processing thread {thread_id}: {e}")
 
