@@ -2,7 +2,7 @@ import '@/app/globals.css';
 import Link from 'next/link';
 import { API_URL, API_ENDPOINTS } from '@/config';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowRight, Mail, Monitor, Reply, Inbox, Users, SendHorizontal, MessageSquare } from "lucide-react";
+import { ArrowRight, Mail, Monitor, Reply, Inbox, Users, SendHorizontal, MessageSquare, Settings } from "lucide-react";
 
 async function getDashboardData() {
   const res = await fetch(`${API_URL}${API_ENDPOINTS.dashboard}`, {
@@ -126,16 +126,36 @@ export default async function Dashboard() {
           <Card className="hover:shadow-lg transition-shadow cursor-default">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Inbox className="h-5 w-5" />
-                Update Inbox
+                <MessageSquare className="h-5 w-5" />
+                Conversations
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">
-                Configure and manage your email inbox settings
+                Chat and close deals with your leads
               </p>
               <Link 
-                href="/update_emails"
+                href="/conversations"
+                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 group"
+              >
+                Chat Now <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow cursor-default">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Configure Emails
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Configure and manage your email accounts
+              </p>
+              <Link 
+                href="/configure_emails"
                 className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 group"
               >
                 Configure <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />

@@ -135,7 +135,7 @@ export default function UpdateEmailBox() {
             <h2 className="text-2xl text-center font-bold mb-6 text-gray-800">Setup Email Accounts</h2>
             {showSuccess && (
                 <div className="mb-6 p-4 flex flex-col gap-2 items-center justify-center bg-green-50 border border-green-200 rounded-md">
-                    <span className="font-semibold">Email Updated!</span> 
+                    <span className="font-semibold">Email Configurations Updated!</span> 
                     <p className="text-green-800 font-medium text-center">
                         Redirecting to dashboard in {countdown} seconds...
                     </p>
