@@ -295,7 +295,7 @@ export default function SendEmailsClient() {
             </div>
 
             <div key="leads-header" className="bg-white rounded-lg shadow relative">
-                <div className="grid grid-cols-[150px_1fr_1fr_1fr_200px_200px] bg-gray-100 border-b sticky top-0 rounded-t-lg overflow-hidden">
+                <div className="grid grid-cols-[200px_1.5fr_250px_1fr_200px_200px] bg-gray-100 border-b sticky top-0 rounded-t-lg overflow-hidden">
                     {tableHeaders.map((header) => (
                         <div key={header} className="px-6 py-4 text-left text-sm font-semibold text-gray-500 tracking-wider hover:bg-gray-200">
                             {header}
@@ -307,7 +307,7 @@ export default function SendEmailsClient() {
                         <div
                             id={lead.email}
                             key={lead.email}
-                            className="grid grid-cols-[150px_1fr_1fr_1fr_200px_200px] hover:bg-gray-50 transition-colors cursor-pointer"
+                            className="grid grid-cols-[200px_1.5fr_250px_1fr_200px_200px] hover:bg-gray-50 transition-colors cursor-pointer"
                             onClick={() => {
                                 setExpandedRow(expandedRow === lead.email ? null : lead.email);
                                 if (expandedRow !== lead.email) {
