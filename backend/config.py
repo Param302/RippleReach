@@ -27,7 +27,7 @@ class Config:
     SENDER_CONFIGS = [
         {
             "email": email,
-            "display_name": "Krishna",
+            "display_name": details['display_name'],
             "api_key": details['api_key'],
             "password": details['password']
         }
@@ -78,3 +78,10 @@ class Config:
             'email': "krishna@kuberanix.agency"
         }
     }
+
+    @classmethod
+    def update_emails(cls, new_email_details: list[dict[str, str]]):
+        cls.SENDER_CONFIGS = new_email_details
+        for details in new_email_details:
+            cls.__email_manager.add_email(details)
+

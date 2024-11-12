@@ -145,24 +145,17 @@ def get_emails():
 
 @app.route("/api/emails/update", methods=['POST'])
 def update_emails():
-    try:
-        data = request.json
-        new_emails = data.get('emails', [])
-        
-        # Update the email configurations
-        for i, email in enumerate(new_emails):
-            Config.SENDER_CONFIGS[i]['email'] = email
-            
-        return jsonify({
-            'success': True,
-            'message': 'Email configurations updated successfully'
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 500
+    data = request.json
+    print(data)
+    new_emails = data.get('emails')
+    if not new_emails:
+        return jsonify({'success': False, 'message': 'No emails provided'}), 400
+    
+    Config.update_emails(new_emails)        
+    return jsonify({
+        'success': True,
+        'message': 'Email configurations updated successfully'
+    })
 
 @app.route("/api/emails/details")
 def get_email_details():

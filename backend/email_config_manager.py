@@ -23,12 +23,13 @@ class EmailConfigManager:
         """Get configuration for specific email"""
         return dict(self.config[email]) if email in self.config.sections() else None
     
-    def update_email_details(self, email: str, password: str, api_key: str) -> bool:
+    def update_email_details(self, email: str, display_name: str, password: str, api_key: str) -> bool:
         """Update or add email configuration"""            
         if email not in self.config.sections():
             self.config.add_section(email)
             
         self.config[email] = {
+            'display_name': display_name,
             'password': password,
             'api_key': api_key
         }
@@ -40,6 +41,10 @@ class EmailConfigManager:
         except Exception:
             return False
     
+    def add_email(self, details: dict[str, str]) -> bool:
+        """Add email configuration"""
+        return self.update_email_details(details['email'], details['display_name'], details['password'], details['api_key'])
+
     def delete_email(self, email: str) -> bool:
         """Delete email configuration"""
         if email not in self.config.sections():
