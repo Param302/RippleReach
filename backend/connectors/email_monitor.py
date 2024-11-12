@@ -1,6 +1,6 @@
 import email
 import imaplib
-from bs4 import BeautifulSoup
+from datetime import datetime
 from connectors.gsheet import update_sheet_row
 from openai_llm import extract_email_conversation
 from constants import SenderType, SheetColumns, EmailStatus
@@ -45,7 +45,6 @@ class EmailMonitor:
                 for num in message_nums:
                     _, msg_data = mail.fetch(num, '(RFC822)')
                     email_message = email.message_from_bytes(msg_data[0][1])
-                    participants = self._get_thread_participants(email_message)
                     thread_id = email_message.get(
                     'Message-ID', '') or email_message.get('Thread-Index', '')
                     if thread_id not in processed_threads:
@@ -54,16 +53,16 @@ class EmailMonitor:
                             mail, email_message)
                         latest_message = thread_messages[-1]
                         conv = extract_email_conversation(latest_message)
-                        print("CONVERSATION", conv)
                         conversations[email_id] = {**conversations[email_id], **conv}
-                        print("ALL CONVERSATIONS", conversations)
         finally:
             mail.close()
             mail.logout()
             for lead_email in conversations:
                 if not conversations[lead_email]:
                     continue
-                # self._update_lead_in_sheet(lead_email, conversations[lead_email])
+                print(f"Updating {lead_email}")
+                self._update_lead_in_sheet(lead_email, conversations[lead_email])
+
 
     def _get_thread_participants(self, email_message):
         """Extract all email addresses from message headers"""
@@ -73,12 +72,12 @@ class EmailMonitor:
         for header in ['From', 'To', 'Cc']:
             addresses = email_message.get(header, '')
             if addresses:
-                # Simple email extraction - could be made more robust
                 emails = [self._parse_email_address(
                     addr) for addr in addresses.split(',')]
                 participants.update(emails)
 
         return participants
+
 
     def _get_thread_messages(self, mail, reference_message):
         """Get all messages in the same thread"""
@@ -100,85 +99,27 @@ class EmailMonitor:
             key=lambda m: email.utils.parsedate_to_datetime(m['Date']))
         return thread_messages
 
+
     def _parse_email_address(self, from_header):
         """Extract email from "Name <email@domain.com>" format"""
         if '<' in from_header:
             return from_header.split('<')[1].split('>')[0]
         return from_header
 
-    # def _decode_header(self, header):
-    #     if header is None:
-    #         return ""
-    #     decoded_header, encoding = decode_header(header)[0]
-    #     if isinstance(decoded_header, bytes):
-    #         return decoded_header.decode(encoding or 'utf-8')
-    #     return decoded_header
-
-    # def _get_email_body(self, email_message):
-    #     if email_message.is_multipart():
-    #         for part in email_message.walk():
-    #             if part.get_content_type() == "text/plain":
-    #                 return part.get_payload(decode=True).decode()
-    #     else:
-    #         return email_message.get_payload(decode=True).decode()
-    #     return ""
-
-    # def _convert_html_to_text(self, html_content: str) -> str:
-    #     """Convert HTML content to plain text while preserving structure"""
-    #     try:
-    #         # First try to parse with BeautifulSoup to clean the HTML
-    #         soup = BeautifulSoup(html_content, 'html.parser')
-
-    #         # Initialize html2text
-    #         h = html2text.HTML2Text()
-    #         h.ignore_links = False
-    #         h.body_width = 0  # Don't wrap text
-    #         h.protect_links = True  # Keep the full URLs
-
-    #         # Convert to markdown-style text
-    #         text = h.handle(str(soup))
-
-    #         # Clean up extra whitespace while preserving structure
-    #         lines = [line.strip() for line in text.splitlines()]
-    #         text = '\n'.join(line for line in lines if line)
-
-    #         return text
-    #     except Exception as e:
-    #         return html_content  # Return original content if conversion fails
 
     def _update_lead_in_sheet(self, lead_email: str, conversation: dict):
         """Update the sheet with reply information"""
-        # print("CONVERSATIONNNN", conversation.items())
+        latest_conv = self._get_latest_message(conversation)
         update_data = {
-            # SheetColumns.THREAD_ID.value: thread_id,
             SheetColumns.EMAIL_STATUS.value: EmailStatus.REPLIED.value,
-            SheetColumns.LAST_SENDER.value: SenderType.CLIENT.value,
-            SheetColumns.LAST_MESSAGE.value: conversation[0]["message"],
+            SheetColumns.LAST_SENDER.value: SenderType.AGENCY.value if latest_conv["sender"] == self.config["email"] else SenderType.CLIENT.value,
+            SheetColumns.LAST_MESSAGE.value: latest_conv["message"],
             SheetColumns.CONVERSATION_HISTORY.value: f"{conversation}"
         }
-
+    
         update_sheet_row(lead_email, update_data)
 
-    def extract_text_from_email_body(self, email_body: str) -> str:
-        """Extract text from email body using beautifulsoup"""
-        soup = BeautifulSoup(email_body, "html.parser")
-        return soup.get_text()
 
-
-    # def _update_conversation_history(self, lead_email: str, new_message: str) -> str:
-    #     """Append new message to conversation history"""
-    #     timestamp = datetime.now().timestamp()
-
-    #     # Get existing history
-    #     lead = get_lead_by_email(lead_email)
-    #     conversation = lead.get(SheetColumns.CONVERSATION_HISTORY.value)
-    #     print(f"Lead is {lead_email}")
-    #     print(f"Conversation: {conversation}")
-    #     print(type(conversation))
-    #     if not conversation:
-    #         conversation = {}
-    #     else:
-    #         conversation = json.loads(clean_json_string(conversation))
-    #     # Add new message
-    #     conversation[timestamp] = new_message
-    #     return json.dumps(conversation)
+    def _get_latest_message(self, conversation: dict) -> str:
+        """Get the latest message from the conversation"""
+        return sorted(list(conversation.items()), key=lambda x: datetime.strptime(x[0], "%Y-%m-%d %H:%M:%S"))[-1][1]

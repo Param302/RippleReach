@@ -1,14 +1,14 @@
 import os
 from config import Config
 from flask_cors import CORS
-from utils.helper import get_description
 from connectors.email_monitor import EmailMonitor
-from utils.email_integration import send_round_robin_email
+from openai_llm import generate_1st_cold_email_content
 from flask import Flask, render_template, jsonify, request
+from utils.email_integration import send_round_robin_email
 from constants import EmailStatus, SenderType, SheetColumns
 from utils.formatter import format_email_content, format_keys
+from utils.helper import get_description, parse_conversation_history
 from connectors.gsheet import get_leads_data, get_agency_data, update_sheet_row, get_lead_by_email
-from openai_llm import generate_1st_cold_email_content
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
@@ -42,16 +42,15 @@ def get_leads():
     return jsonify(format_keys(leads))
 
 def get_active_replied_leads():
-    leads = get_leads_data()  # Fetch all leads
+    leads = get_leads_data()
     filtered_leads = [
 
         lead for lead in leads 
         if lead[SheetColumns.EMAIL_STATUS.value] in (EmailStatus.ACTIVE.value, EmailStatus.REPLIED.value)
     ]
-    # filtered_leads = {
-    #     lead[SheetColumns.EMAIL.value]: lead for lead in leads 
-    #     if lead[SheetColumns.EMAIL_STATUS.value] in (EmailStatus.ACTIVE.value, EmailStatus.REPLIED.value)
-    # }
+
+    for lead in filtered_leads:
+        lead[SheetColumns.CONVERSATION_HISTORY.value] = parse_conversation_history(eval(lead[SheetColumns.CONVERSATION_HISTORY.value]))
 
     return filtered_leads
 
@@ -65,13 +64,9 @@ def get_conversations():
 def refresh_leads():
     leads = get_leads_data()
     for monitor in [EmailMonitor(config) for config in Config.SENDER_CONFIGS]:
-        print(leads)
         monitor.check_replies(leads)
 
     active_replied_leads = format_keys(get_active_replied_leads())
-    # for lead in leads:
-    #     leads[lead] = format_keys(leads[lead])
-    data = {}
     return jsonify({'success': True, 'leads': active_replied_leads})
 
 

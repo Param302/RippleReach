@@ -1,4 +1,5 @@
 import re
+import json
 from constants import SheetColumns
 from openai_llm import generate_company_description
 from connectors.gsheet import get_lead_by_email, update_sheet_row
@@ -32,4 +33,7 @@ def get_description(email: str) -> dict:
 
 
 def clean_json_string(s: str) -> str:
-    return re.sub(r"'(\d{10,13})'", r'"\1"', s).encode('utf-8').decode('unicode_escape').replace('\r', '').replace('\n', '{newline}').replace('\t', '{tab}')
+    return re.sub(r"'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})'", r'"\1"', s).encode('utf-8').decode('unicode_escape').replace('\r', '').replace('\n', '{newline}').replace('\t', '{tab}')
+
+def parse_conversation_history(conversation: dict) -> str:
+    return json.dumps(conversation, indent=-1)

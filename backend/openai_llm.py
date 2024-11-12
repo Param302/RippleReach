@@ -118,18 +118,20 @@ def generate_standard_response(lead_info, previous_conversation):
 
 def extract_email_conversation(email_body: str) -> str:
     prompt = (
-        f"Extract the email conversation and format it as a JSON dictionary of dictionaries where:\n"
+        f"Extract the email conversation and format it as a Python dictionary of dictionaries where:\n"
         "The outer dictionary has keys as the timestamp of the message and values as dictionary with the following keys:\n"
         "- sender: the sender's email address\n"
         "- message: the actual message\n\n"
-        "For the key timestamp in outer dictionary, usethe timestamp of the message in ISO format (YYYY-MM-DD HH:MM:SS) with the time zone\n"
+        "For the key timestamp in outer dictionary, usethe timestamp of the message in ISO format (YYYY-MM-DD HH:MM:SS). The timezone is Asia/Kolkata +5:30\n"
+        "DON'T modify the timezone or time values.\n"
+        "DON'T include the timezone in the timestamp.\n"
+        "DON'T remove the new line characters in the message\n"
+        "DON'T create any placeholders for newlines, just keep the newlines as it is like '\\n'\n"
         "Remove any duplicate messages\n"
         "Maintain chronological order\n"
-        "Maintain new line characters in the message\n"
         "Include the actual conversation content and all replies\n\n"
         f"Email body:\n{email_body}\n\n"
-        "Return ONLY a valid JSON dictionary of dictionaries with the conversation.\n"
-        "Remember, keys and values must be enclosed in double quotes."
+        "Return ONLY a valid Python dictionary of dictionaries with the conversation.\n"
     )
     return dict(json.loads(make_completion_request(
         model="gpt-3.5-turbo",
