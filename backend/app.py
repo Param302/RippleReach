@@ -1,3 +1,4 @@
+import os
 from config import Config
 from flask_cors import CORS
 from utils.helper import get_description
@@ -164,5 +165,8 @@ def get_email_details():
 
 if __name__ == '__main__':
     app.run(debug=True)
+    for key in list(os.environ.keys()):
+        del os.environ[key]
+    
 
 
