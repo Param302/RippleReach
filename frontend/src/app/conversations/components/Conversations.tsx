@@ -59,6 +59,17 @@ export default function Conversations() {
         }
     };
 
+    const refreshLeads = async () => {
+        setLoading(true);
+        const response = await fetch(`${API_URL}/api/leads/monitor`, {
+            cache: 'no-store',
+        });
+        const data = await response.json();
+        setLeads(data.leads);
+        console.log(data);
+        setLoading(false);
+    }
+
     useEffect(() => {
         fetchLeads();
     }, []);
@@ -69,7 +80,7 @@ export default function Conversations() {
                 <div className="flex justify-between items-center p-4 border-b bg-gray-200">
                     <h2 className="text-xl font-bold">Conversations</h2>
                     <Button
-                        onClick={fetchLeads}
+                        onClick={refreshLeads}
                         className="text-md font-medium flex items-center gap-2"
                     >
                         <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
