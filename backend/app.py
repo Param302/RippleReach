@@ -2,13 +2,13 @@ import os
 from config import Config
 from flask_cors import CORS
 from utils.helper import get_description
-from constants import EmailStatus, SenderType, SheetColumns
+from connectors.email_monitor import EmailMonitor
 from utils.email_integration import send_round_robin_email
 from flask import Flask, render_template, jsonify, request
+from constants import EmailStatus, SenderType, SheetColumns
 from utils.formatter import format_email_content, format_keys
 from connectors.gsheet import get_leads_data, get_agency_data, update_sheet_row, get_lead_by_email
-from openai_llm import generate_1st_cold_email_content, generate_company_description, generate_standard_response
-from connectors.email_monitor import EmailMonitor
+from openai_llm import generate_1st_cold_email_content
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True, origins=["http://localhost:3000"])
@@ -43,33 +43,27 @@ def get_leads():
 
 def get_active_replied_leads():
     leads = get_leads_data()  # Fetch all leads
-    filtered_leads = [
-        lead for lead in leads 
+    filtered_leads = {
+        lead[SheetColumns.EMAIL.value]: lead for lead in leads 
         if lead[SheetColumns.EMAIL_STATUS.value] in (EmailStatus.ACTIVE.value, EmailStatus.REPLIED.value)
-    ]
+    }
 
-    # if not filtered_leads:
-    #     return jsonify({'success': False, 'message': 'No leads with active or replied status found'}), 404
-
-    return jsonify({'success': True, 'leads': format_keys(filtered_leads)})
+    return filtered_leads
 
 
-@app.route("/api/leads/active-replied")
-def get_conversations():
-    return get_active_replied_leads()
-
+# @app.route("/api/leads/active-replied")
+# def get_conversations():
+#     return jsonify({'success': True, 'leads': get_active_replied_leads()})
 
 
 @app.route("/api/leads/monitor")
 def refresh_leads():
-    # for monitor in EMAIL_MONITORS:
-    #     monitor.check_replies()
-    EMAIL_MONITORS[1].check_replies()
-    x = get_active_replied_leads()
-    print(x)
-    # leads = get_leads_data()
-    # return jsonify({'success': True, 'leads': format_keys(leads)})
-    return x
+    active_replied_leads = get_leads_data()
+    for monitor in [EmailMonitor(config) for config in Config.SENDER_CONFIGS]:
+        print(active_replied_leads)
+        monitor.check_replies(active_replied_leads)
+
+    return jsonify({'success': True, 'leads': get_active_replied_leads()})
 
 
 @app.route("/api/lead/<lead_email>/generate-email", methods=['POST'])

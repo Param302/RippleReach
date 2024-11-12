@@ -1,5 +1,4 @@
 import json
-from bs4 import BeautifulSoup
 import openai
 from config import Config
 from constants import SheetColumns
@@ -120,21 +119,18 @@ def generate_standard_response(lead_info, previous_conversation):
 def extract_email_conversation(email_body: str) -> str:
     prompt = (
         f"Extract the email conversation and format it as a JSON dictionary of dictionaries where:\n"
-        "The outer dictionary has keys as the email address and values as lists of dictionaries with the following keys:\n"
-        "- timestamp: timestamp in ISO format (YYYY-MM-DD HH:MM:SS)\n"
+        "The outer dictionary has keys as the sender's email address and values as lists of dictionaries with the following keys:\n"
+        "- timestamp: the timestamp of the message in ISO format (YYYY-MM-DD HH:MM:SS) with the time zone\n"
         "- message: the actual message\n\n"
         "Remove any duplicate messages\n"
         "Maintain chronological order\n"
+        "Maintain new line characters in the message\n"
         "Include the actual conversation content and all replies\n\n"
         f"Email body:\n{email_body}\n\n"
-        "Return ONLY a valid JSON dictionary of dictionaries with the conversation."
+        "Return ONLY a valid JSON dictionary of dictionaries with the conversation.\n"
+        "Remember, keys and values must be enclosed in double quotes."
     )
-    return make_completion_request(
+    return dict(json.loads(make_completion_request(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": prompt}],
-    )
-
-def extract_text_from_email_body(email_body: str) -> str:
-    # using beautifulsoup to extract the text from the email body
-    soup = BeautifulSoup(email_body, "html.parser")
-    return soup.get_text()
+    )))

@@ -63,6 +63,10 @@ export default function Conversations() {
         setLoading(true);
         const response = await fetch(`${API_URL}/api/leads/monitor`, {
             cache: 'no-store',
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
         });
         const data = await response.json();
         setLeads(data.leads);

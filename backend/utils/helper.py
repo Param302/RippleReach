@@ -3,12 +3,14 @@ from constants import SheetColumns
 from openai_llm import generate_company_description
 from connectors.gsheet import get_lead_by_email, update_sheet_row
 
+
 def update_description(email: str, description: str) -> bool:
     """Update company description in the sheet"""
     return update_sheet_row(
         email,
         {SheetColumns.COMPANY_BACKGROUND.value: description}
     )
+
 
 def get_description(email: str) -> dict:
     """Get or generate company description"""
