@@ -7,13 +7,31 @@ import { Loader2, RefreshCw } from "lucide-react";
 import { API_URL } from '@/config';
 
 interface Lead {
-    email: string;
-    name: string;
-    company_name: string;
+    cold_email_subject: string;
+    company_background: string;
     company_domain: string;
+    company_name: string;
+    company_size: number;
+    conversation_history: string;
+    email: string;
+    email_content: string;
+    email_status: "active" | "replied"; // Adjust based on possible values
+    follow_up_needed: string;
+    html_email_content: string;
+    headline: string;
+    industry: string;
+    last_message: string;
+    last_message_id: string;
+    last_sender: string;
+    message_id: string;
+    name: string;
+    proposal: string;
+    response: string;
+    response_subject: string;
     role: string;
-    company_size: string;
-    email_status: "active" | "replied";
+    sender_email: string;
+    thread_id: string;
+    thread_subject: string;
 }
 
 const getStatusColor = (status: string) => {
@@ -36,14 +54,13 @@ const StatusDisplay = ({ status }: { status: string }) => (
 );
 
 export default function Conversations() {
-    const [leads, setLeads] = useState<Lead[]>([]);
+    const [leads, setLeads] = useState<{ [key: string]: Lead }>({});
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchLeads = async () => {
         try {
-            const response = await fetch(`${API_URL}/api/leads/active-replied`, {
-                cache: 'no-store',
+            const response = await fetch(`${API_URL}/api/leads/conversations`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -74,12 +91,23 @@ export default function Conversations() {
         setLoading(false);
     }
 
+    const parseConversationHistory = (history: string) => {
+        // Ensure history is a string before parsing
+        if (typeof history !== 'string') return {};
+        try {
+            return JSON.parse(history); // Directly parse the JSON string
+        } catch (error) {
+            console.error('Error parsing conversation history:', error);
+            return {};
+        }
+    };
+
     useEffect(() => {
         fetchLeads();
     }, []);
 
     return (
-        <main className="grid grid-cols-[1fr_3fr] h-screen">
+        <main className="grid grid-cols-[1fr_3fr] h-screen max-h-[93vh]">
             <section key="leads-panel" className="border-r border-gray-200 overflow-y-scroll">
                 <div className="flex justify-between items-center p-4 border-b bg-gray-200">
                     <h2 className="text-xl font-bold">Conversations</h2>
@@ -91,12 +119,12 @@ export default function Conversations() {
                     </Button>
                 </div>
                 {loading ? (
-                    <div className="flex items-center justify-center h-full">
+                    <div className="flex items-center justify-center h-full bg-gray-100">
                         <Loader2 className="h-6 w-6 animate-spin" />
                     </div>
                 ) : (
-                    leads.map((lead) => (
-                        <div key={lead.email} className="mb-2 grid border-b grid-rows-2 grid-cols-[4fr_1fr] p-4 cursor-pointer hover:bg-gray-100" onClick={() => setSelectedLead(lead)}>
+                    Object.entries(leads).map(([email, lead]) => (
+                        <div key={email} className="grid border-b grid-rows-2 grid-cols-[4fr_1fr] p-4 cursor-pointer bg-gray-50 hover:bg-gray-100" onClick={() => setSelectedLead(lead)}>
                             <div className="text-md font-semibold">{lead.name}</div>
                             <div className="w-fit">
                                 <StatusDisplay status={lead.email_status}/>
@@ -107,12 +135,48 @@ export default function Conversations() {
                 )}
             </section>
 
-            <section key="conversations-panel" className="w-2/3 p-4">
+            <section key="conversations-panel" className="p-4">
                 {selectedLead ? (
-                    <div>
-                        <h2 className="text-xl font-bold mb-4">Conversations with {selectedLead.name}</h2>
-                        <div className="border rounded-lg p-4 h-full">
-                            <p>Chat messages will appear here...</p>
+                    <div className="flex flex-col h-full">
+                        <div className="flex gap-4">
+                            <h2 className="text-2xl font-bold mb-2">
+                                Conversations with {selectedLead.name}
+                            </h2>
+                            <div className="flex mb-4 p-2 bg-gray-100 rounded-lg">
+                                <p className="text-sm font-medium text-gray-700">
+                                    {selectedLead.role} at <span className="font-semibold">{selectedLead.company_name}</span>
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                    Client Email: <span className="font-semibold">{selectedLead.email}</span>
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                    Our Email: <span className="font-semibold">{selectedLead.sender_email}</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div className="border rounded-lg p-4 flex-1 h-fit overflow-y-scroll bg-white shadow-md max-h-[50vh]">
+                            {selectedLead && parseConversationHistory(selectedLead.conversation_history) && 
+                                Object.entries(parseConversationHistory(selectedLead.conversation_history))
+                                    .sort(([timestampA], [timestampB]) => new Date(timestampA).getTime() - new Date(timestampB).getTime())
+                                    .map(([timestamp, { sender, message }]: [string, { sender: string; message: string }]) => (
+                                        <div key={timestamp} className={`flex ${sender === selectedLead.sender_email ? 'justify-end' : 'justify-start'} mb-2 w-full`}>
+                                            <div className={`p-3 rounded-lg ${sender === selectedLead.sender_email ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'} w-fit max-w-[60%]`}>
+                                                <p className="text-sm whitespace-pre-wrap">{message.trim().split('\n').map((line, index) => (
+                                                    <span key={index}>
+                                                        {line}
+                                                        <br />
+                                                    </span>
+                                                ))}</p>
+                                            </div>
+                                        </div>
+                                    ))
+                            }
+                        </div>
+                        <div className="mt-4">
+                            <button className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition duration-200">
+                                Generate
+                            </button>
+                            <p className="text-gray-500 mt-2">Analyze the conversation and generate a reply</p>
                         </div>
                     </div>
                 ) : (
