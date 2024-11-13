@@ -366,7 +366,7 @@ export default function SendEmailsClient() {
                                             <Card>
                                                 <CardHeader>
                                                     <CardTitle className={`text-lg ${lead.email_status === 'Sent' ? 'block' : 'flex flex-row items-center justify-between'}`}>Company Details
-                                                        {lead.email_status !== 'Sent' && ((
+                                                        {lead.email_status === 'New' && (
                                                             <Button id={`generate-email-btn-${lead.email}`}
                                                                 onClick={() => generateEmail(lead.email)}
                                                                 disabled={isGenerating}
@@ -381,7 +381,7 @@ export default function SendEmailsClient() {
                                                                     'Generate Cold Email'
                                                                 )}
                                                             </Button>
-                                                        ))}
+                                                        )}
                                                     </CardTitle>
                                                 </CardHeader>
                                                 <CardContent className="space-y-4">
@@ -406,7 +406,7 @@ export default function SendEmailsClient() {
                                                 <Card>
                                                     <CardHeader className="flex flex-row items-center justify-between">
                                                         <CardTitle className="text-lg">Cold Mail</CardTitle>
-                                                        {lead.email_status !== 'Sent' && (
+                                                        {lead.email_status === 'New' && (
                                                             <Button
                                                                 onClick={() => sendEmail(lead.email)}
                                                                 disabled={isSending}
@@ -433,7 +433,7 @@ export default function SendEmailsClient() {
                                                             <Input id={`subject-input-${lead.email}`}
                                                                 value={emailContents[lead.email]?.subject}
                                                                 onChange={(e) => setEmailContents(prev => ({ ...prev, [lead.email]: { ...prev[lead.email], subject: e.target.value } }))}
-                                                                disabled={lead.email_status === 'Sent'}
+                                                                disabled={lead.email_status !== 'New'}
                                                             />
                                                         </div>
                                                         <div>
@@ -441,7 +441,7 @@ export default function SendEmailsClient() {
                                                             <Textarea id={`email-input-${lead.email}`}
                                                                 value={emailContents[lead.email]?.email}
                                                                 onChange={(e) => setEmailContents(prev => ({ ...prev, [lead.email]: { ...prev[lead.email], email: e.target.value } }))}
-                                                                disabled={lead.email_status === 'Sent'}
+                                                                disabled={lead.email_status !== 'New'}
                                                                 rows={8} className="resize-none"
                                                             />
                                                         </div>
